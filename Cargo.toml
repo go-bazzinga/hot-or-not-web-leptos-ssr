@@ -12,7 +12,7 @@ candid = "0.9.11"
 cfg-if = "1"
 console_error_panic_hook = "0.1"
 console_log = "1"
-http = "0.2.8"
+http = "1.0.0"
 ic-agent = { version = "0.30.0", features = ["wasm-bindgen", "reqwest"] }
 leptos = { version = "0.5", features = ["nightly"] }
 leptos_axum = { version = "0.5", optional = true }
