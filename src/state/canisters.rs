@@ -1,7 +1,10 @@
 use candid::Principal;
 
-use crate::canister::{AGENT_URL, post_cache::{PostCache, self}, individual_user_template::{IndividualUserTemplate, self}};
-
+use crate::canister::{
+    individual_user_template::IndividualUserTemplate,
+    post_cache::{self, PostCache},
+    AGENT_URL,
+};
 
 #[derive(Debug, Clone)]
 pub struct Canisters {

@@ -1,12 +1,12 @@
 use cfg_if::cfg_if;
 pub mod app;
+pub mod canister;
+pub mod component;
 pub mod error_template;
 pub mod fileserv;
-pub mod page;
-pub mod canister;
-pub mod state;
-pub mod component;
 pub mod js;
+pub mod page;
+pub mod state;
 
 cfg_if! { if #[cfg(feature = "hydrate")] {
     use leptos::*;

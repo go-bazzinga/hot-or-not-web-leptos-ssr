@@ -2,10 +2,10 @@ pub mod canisters;
 
 #[cfg(feature = "ssr")]
 pub mod server {
-    use leptos::LeptosOptions;
-    use leptos_router::RouteListing;
     use super::canisters::Canisters;
     use axum::extract::FromRef;
+    use leptos::LeptosOptions;
+    use leptos_router::RouteListing;
 
     #[derive(FromRef, Debug, Clone)]
     pub struct AppState {

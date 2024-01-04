@@ -1,4 +1,8 @@
-use crate::{error_template::{AppError, ErrorTemplate}, page::{root::RootPage, err::ServerErrorPage, post_view::PostView}, state::canisters::Canisters};
+use crate::{
+    error_template::{AppError, ErrorTemplate},
+    page::{err::ServerErrorPage, post_view::PostView, root::RootPage},
+    state::canisters::Canisters,
+};
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
@@ -10,8 +14,6 @@ pub fn App() -> impl IntoView {
     provide_context(Canisters::default());
 
     view! {
-        // injects a stylesheet into the document <head>
-        // id=leptos means cargo-leptos will hot-reload this stylesheet
         <Stylesheet id="leptos" href="/pkg/leptos-ssr.css"/>
 
         // sets the document title
@@ -21,10 +23,7 @@ pub fn App() -> impl IntoView {
         <Router fallback=|| {
             let mut outside_errors = Errors::default();
             outside_errors.insert_with_default_key(AppError::NotFound);
-            view! {
-                <ErrorTemplate outside_errors/>
-            }
-            .into_view()
+            view! { <ErrorTemplate outside_errors/> }.into_view()
         }>
             <main>
                 <Routes>

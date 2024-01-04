@@ -1,13 +1,12 @@
-use std::{fs, io, ffi::OsStr, path::PathBuf, env, collections::HashMap};
 use candid_parser::Principal;
-use serde::Deserialize;
 use convert_case::{Case, Casing};
+use serde::Deserialize;
+use std::{collections::HashMap, env, ffi::OsStr, fs, io, path::PathBuf};
 
 #[derive(Deserialize)]
 struct CanId {
     ic: Principal,
 }
-
 
 fn read_candid_ids() -> io::Result<HashMap<String, CanId>> {
     let can_ids_file = fs::File::open("did/canister_ids.json")?;
@@ -37,14 +36,21 @@ fn main() -> io::Result<()> {
         }
         let file_name = didpath.file_stem().unwrap().to_str().unwrap();
 
-        // compile bindings from did 
-        candid_config.set_canister_id(can_ids.get(file_name)
-            .unwrap_or_else(|| panic!("no canister id for {file_name}"))
-            .ic);
-        let service_name: String = file_name.to_case(Case::Pascal); 
+        // compile bindings from did
+        candid_config.set_canister_id(
+            can_ids
+                .get(file_name)
+                .unwrap_or_else(|| panic!("no canister id for {file_name}"))
+                .ic,
+        );
+        let service_name: String = file_name.to_case(Case::Pascal);
         candid_config.set_service_name(service_name);
-        let (type_env, actor) = candid_parser::pretty_check_file(&didpath)
-            .unwrap_or_else(|e| panic!("invalid did file: {}, err: {e}", didpath.as_os_str().to_string_lossy()));
+        let (type_env, actor) = candid_parser::pretty_check_file(&didpath).unwrap_or_else(|e| {
+            panic!(
+                "invalid did file: {}, err: {e}",
+                didpath.as_os_str().to_string_lossy()
+            )
+        });
         let bindings = candid_parser::bindings::rust::compile(&candid_config, &type_env, &actor);
 
         // write bindings to $OUT_DIR/did/<did file>.rs
@@ -54,15 +60,17 @@ fn main() -> io::Result<()> {
         fs::write(&binding_file, bindings)?;
 
         // #[path = "$OUT_DIR/did/<did file>.rs"] pub mod <did file>;
-        did_mod_contents.push_str(&format!("#[path = \"{}\"] pub mod {};\n", binding_file.to_string_lossy(), file_name));
+        did_mod_contents.push_str(&format!(
+            "#[path = \"{}\"] pub mod {};\n",
+            binding_file.to_string_lossy(),
+            file_name
+        ));
     }
 
     // create mod file for did bindings
     // ideally i'd like to manually write this file in src/canister/mod.rs
     // but can't, due to https://github.com/rust-lang/rfcs/issues/752
-    let binding_mod_file = PathBuf::from(&out_dir)
-        .join("did")
-        .join("mod.rs");
+    let binding_mod_file = PathBuf::from(&out_dir).join("did").join("mod.rs");
     fs::write(binding_mod_file, did_mod_contents)?;
     Ok(())
 }

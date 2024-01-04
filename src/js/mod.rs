@@ -1,8 +1,8 @@
 pub mod wasp {
     use std::ops::Deref;
 
-    use leptos::{HtmlElement, html::Video};
-    use serde::{Serialize, Deserialize};
+    use leptos::{html::Video, HtmlElement};
+    use serde::{Deserialize, Serialize};
     use wasm_bindgen::prelude::*;
 
     #[wasm_bindgen(module = "/src/js/wasp-wrapper.js")]
@@ -35,7 +35,7 @@ pub mod wasp {
 
     impl WaspHlsPlayer {
         pub fn new(video_element: &HtmlElement<Video>, config: Option<WaspHlsConfig>) -> Self {
-            let video_raw: &JsValue = video_element.deref(); 
+            let video_raw: &JsValue = video_element.deref();
             let conf = serde_wasm_bindgen::to_value(&config).unwrap();
             buildPlayer(video_raw.clone(), conf)
         }

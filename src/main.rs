@@ -1,29 +1,45 @@
 #[cfg(feature = "ssr")]
 mod handlers {
     use axum::{
-        response::{Response, IntoResponse},
-        extract::{Path, State, RawQuery},
-        http::{Request, header::HeaderMap},
         body::Body as AxumBody,
+        extract::{Path, RawQuery, State},
+        http::{header::HeaderMap, Request},
+        response::{IntoResponse, Response},
     };
     use leptos::provide_context;
     use leptos_axum::handle_server_fns_with_context;
-    use leptos_ssr::{state::server::AppState, app::App};
+    use leptos_ssr::{app::App, state::server::AppState};
 
-    pub async fn server_fn_handler(State(app_state): State<AppState>, path: Path<String>, headers: HeaderMap, raw_query: RawQuery,
-    request: Request<AxumBody>) -> impl IntoResponse {
-        handle_server_fns_with_context(path, headers, raw_query, move || {
-            provide_context(app_state.canisters.clone());
-        }, request).await
+    pub async fn server_fn_handler(
+        State(app_state): State<AppState>,
+        path: Path<String>,
+        headers: HeaderMap,
+        raw_query: RawQuery,
+        request: Request<AxumBody>,
+    ) -> impl IntoResponse {
+        handle_server_fns_with_context(
+            path,
+            headers,
+            raw_query,
+            move || {
+                provide_context(app_state.canisters.clone());
+            },
+            request,
+        )
+        .await
     }
 
-    pub async fn leptos_routes_handler(State(app_state): State<AppState>, req: Request<AxumBody>) -> Response{
-        let handler = leptos_axum::render_route_with_context(app_state.leptos_options.clone(),
+    pub async fn leptos_routes_handler(
+        State(app_state): State<AppState>,
+        req: Request<AxumBody>,
+    ) -> Response {
+        let handler = leptos_axum::render_route_with_context(
+            app_state.leptos_options.clone(),
             app_state.routes.clone(),
             move || {
                 provide_context(app_state.canisters.clone());
             },
-           App 
+            App,
         );
         handler(req).await.into_response()
     }
@@ -32,14 +48,17 @@ mod handlers {
 #[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() {
-    use axum::{routing::{get, post}, Router};
+    use axum::{
+        routing::{get, post},
+        Router,
+    };
+    use handlers::*;
     use leptos::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
     use leptos_ssr::app::*;
     use leptos_ssr::fileserv::file_and_error_handler;
     use leptos_ssr::state::canisters::Canisters;
     use leptos_ssr::state::server::AppState;
-    use handlers::*;
 
     simple_logger::init_with_level(log::Level::Debug).expect("couldn't initialize logging");
 
@@ -61,7 +80,10 @@ async fn main() {
 
     // build our application with a route
     let app = Router::new()
-        .route("/api/*fn_name", get(server_fn_handler).post(server_fn_handler))
+        .route(
+            "/api/*fn_name",
+            get(server_fn_handler).post(server_fn_handler),
+        )
         .leptos_routes_with_handler(routes, get(leptos_routes_handler))
         .fallback(file_and_error_handler)
         .with_state(app_state);
