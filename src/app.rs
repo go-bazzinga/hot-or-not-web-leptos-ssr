@@ -1,4 +1,4 @@
-use crate::error_template::{AppError, ErrorTemplate};
+use crate::{error_template::{AppError, ErrorTemplate}, page::{root::RootPage, err::ServerErrorPage, post_view::PostView}, state::canisters::Canisters};
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
@@ -7,10 +7,9 @@ use leptos_router::*;
 pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
+    provide_context(Canisters::default());
 
     view! {
-
-
         // injects a stylesheet into the document <head>
         // id=leptos means cargo-leptos will hot-reload this stylesheet
         <Stylesheet id="leptos" href="/pkg/leptos-ssr.css"/>
@@ -29,22 +28,11 @@ pub fn App() -> impl IntoView {
         }>
             <main>
                 <Routes>
-                    <Route path="" view=HomePage/>
+                    <Route path="/" view=RootPage/>
+                    <Route path="/hot-or-not/:canister_id/:post_id" view=PostView/>
+                    <Route path="/error" view=ServerErrorPage/>
                 </Routes>
             </main>
         </Router>
-    }
-}
-
-/// Renders the home page of your application.
-#[component]
-fn HomePage() -> impl IntoView {
-    // Creates a reactive value to update the button
-    let (count, set_count) = create_signal(0);
-    let on_click = move |_| set_count.update(|count| *count += 1);
-
-    view! {
-        <h1>"Welcome to Leptos!"</h1>
-        <button on:click=on_click>"Click Me: " {count}</button>
     }
 }

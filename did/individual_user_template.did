@@ -1,0 +1,332 @@
+type AggregateStats = record {
+  total_number_of_not_bets : nat64;
+  total_amount_bet : nat64;
+  total_number_of_hot_bets : nat64;
+};
+type BetDetails = record {
+  bet_direction : BetDirection;
+  bet_maker_canister_id : principal;
+  amount : nat64;
+  payout : BetPayout;
+};
+type BetDirection = variant { Hot; Not };
+type BetOnCurrentlyViewingPostError = variant {
+  UserPrincipalNotSet;
+  InsufficientBalance;
+  UserAlreadyParticipatedInThisPost;
+  BettingClosed;
+  Unauthorized;
+  PostCreatorCanisterCallFailed;
+  UserNotLoggedIn;
+};
+type BetOutcomeForBetMaker = variant {
+  Won : nat64;
+  Draw : nat64;
+  Lost;
+  AwaitingResult;
+};
+type BetPayout = variant { NotCalculatedYet; Calculated : nat64 };
+type BettingStatus = variant {
+  BettingOpen : record {
+    number_of_participants : nat8;
+    ongoing_room : nat64;
+    ongoing_slot : nat8;
+    has_this_user_participated_in_this_post : opt bool;
+    started_at : SystemTime;
+  };
+  BettingClosed;
+};
+type FeedScore = record {
+  current_score : nat64;
+  last_synchronized_at : SystemTime;
+  last_synchronized_score : nat64;
+};
+type FollowAnotherUserProfileError = variant {
+  UserITriedToFollowCrossCanisterCallFailed;
+  UsersICanFollowListIsFull;
+  Unauthorized;
+  UserITriedToFollowHasTheirFollowersListFull;
+  Unauthenticated;
+};
+type FollowEntryDetail = record {
+  canister_id : principal;
+  principal_id : principal;
+};
+type FolloweeArg = record {
+  followee_canister_id : principal;
+  followee_principal_id : principal;
+};
+type FollowerArg = record {
+  follower_canister_id : principal;
+  follower_principal_id : principal;
+};
+type GetPostsOfUserProfileError = variant {
+  ReachedEndOfItemsList;
+  InvalidBoundsPassed;
+  ExceededMaxNumberOfItemsAllowedInOneRequest;
+};
+type HotOrNotDetails = record {
+  hot_or_not_feed_score : FeedScore;
+  aggregate_stats : AggregateStats;
+  slot_history : vec record { nat8; SlotDetails };
+};
+type HotOrNotOutcomePayoutEvent = variant {
+  WinningsEarnedFromBet : record {
+    slot_id : nat8;
+    post_id : nat64;
+    room_id : nat64;
+    post_canister_id : principal;
+    winnings_amount : nat64;
+    event_outcome : BetOutcomeForBetMaker;
+  };
+  CommissionFromHotOrNotBet : record {
+    slot_id : nat8;
+    post_id : nat64;
+    room_pot_total_amount : nat64;
+    room_id : nat64;
+    post_canister_id : principal;
+  };
+};
+type IndividualUserTemplateInitArgs = record {
+  known_principal_ids : opt vec record { KnownPrincipalType; principal };
+  url_to_send_canister_metrics_to : opt text;
+  profile_owner : opt principal;
+  upgrade_version_number : opt nat64;
+};
+type KnownPrincipalType = variant {
+  CanisterIdUserIndex;
+  CanisterIdConfiguration;
+  CanisterIdProjectMemberIndex;
+  CanisterIdTopicCacheIndex;
+  CanisterIdRootCanister;
+  CanisterIdDataBackup;
+  CanisterIdPostCache;
+  CanisterIdSNSController;
+  UserIdGlobalSuperAdmin;
+};
+type MintEvent = variant {
+  NewUserSignup : record { new_user_principal_id : principal };
+  Referral : record {
+    referrer_user_principal_id : principal;
+    referee_user_principal_id : principal;
+  };
+};
+type PlaceBetArg = record {
+  bet_amount : nat64;
+  post_id : nat64;
+  bet_direction : BetDirection;
+  post_canister_id : principal;
+};
+type PlacedBetDetail = record {
+  outcome_received : BetOutcomeForBetMaker;
+  slot_id : nat8;
+  post_id : nat64;
+  room_id : nat64;
+  canister_id : principal;
+  bet_direction : BetDirection;
+  amount_bet : nat64;
+  bet_placed_at : SystemTime;
+};
+type Post = record {
+  id : nat64;
+  status : PostStatus;
+  share_count : nat64;
+  hashtags : vec text;
+  description : text;
+  created_at : SystemTime;
+  likes : vec principal;
+  video_uid : text;
+  home_feed_score : FeedScore;
+  view_stats : PostViewStatistics;
+  hot_or_not_details : opt HotOrNotDetails;
+  creator_consent_for_inclusion_in_hot_or_not : bool;
+};
+type PostDetailsForFrontend = record {
+  id : nat64;
+  status : PostStatus;
+  home_feed_ranking_score : nat64;
+  hashtags : vec text;
+  hot_or_not_betting_status : opt BettingStatus;
+  like_count : nat64;
+  description : text;
+  total_view_count : nat64;
+  created_by_display_name : opt text;
+  created_by_unique_user_name : opt text;
+  video_uid : text;
+  created_by_user_principal_id : principal;
+  hot_or_not_feed_ranking_score : opt nat64;
+  liked_by_me : bool;
+  created_by_profile_photo_url : opt text;
+};
+type PostDetailsFromFrontend = record {
+  hashtags : vec text;
+  description : text;
+  video_uid : text;
+  creator_consent_for_inclusion_in_hot_or_not : bool;
+};
+type PostStatus = variant {
+  BannedForExplicitness;
+  BannedDueToUserReporting;
+  Uploaded;
+  CheckingExplicitness;
+  ReadyToView;
+  Transcoding;
+  Deleted;
+};
+type PostViewDetailsFromFrontend = variant {
+  WatchedMultipleTimes : record {
+    percentage_watched : nat8;
+    watch_count : nat8;
+  };
+  WatchedPartially : record { percentage_watched : nat8 };
+};
+type PostViewStatistics = record {
+  total_view_count : nat64;
+  average_watch_percentage : nat8;
+  threshold_view_count : nat64;
+};
+type Result = variant { Ok : nat64; Err : text };
+type Result_1 = variant {
+  Ok : BettingStatus;
+  Err : BetOnCurrentlyViewingPostError;
+};
+type Result_2 = variant { Ok : bool; Err : FollowAnotherUserProfileError };
+type Result_3 = variant { Ok : Post; Err };
+type Result_4 = variant {
+  Ok : vec PostDetailsForFrontend;
+  Err : GetPostsOfUserProfileError;
+};
+type Result_5 = variant {
+  Ok : vec record { nat64; TokenEvent };
+  Err : GetPostsOfUserProfileError;
+};
+type Result_6 = variant {
+  Ok : UserProfileDetailsForFrontend;
+  Err : UpdateProfileDetailsError;
+};
+type Result_7 = variant { Ok; Err : UpdateProfileSetUniqueUsernameError };
+type RoomBetPossibleOutcomes = variant { HotWon; BetOngoing; Draw; NotWon };
+type RoomDetails = record {
+  total_hot_bets : nat64;
+  bets_made : vec record { principal; BetDetails };
+  total_not_bets : nat64;
+  room_bets_total_pot : nat64;
+  bet_outcome : RoomBetPossibleOutcomes;
+};
+type SlotDetails = record { room_details : vec record { nat64; RoomDetails } };
+type StakeEvent = variant { BetOnHotOrNotPost : PlaceBetArg };
+type SystemTime = record {
+  nanos_since_epoch : nat32;
+  secs_since_epoch : nat64;
+};
+type TokenEvent = variant {
+  Stake : record {
+    timestamp : SystemTime;
+    details : StakeEvent;
+    amount : nat64;
+  };
+  Burn;
+  Mint : record { timestamp : SystemTime; details : MintEvent; amount : nat64 };
+  Transfer;
+  HotOrNotOutcomePayout : record {
+    timestamp : SystemTime;
+    details : HotOrNotOutcomePayoutEvent;
+    amount : nat64;
+  };
+};
+type UpdateProfileDetailsError = variant { NotAuthorized };
+type UpdateProfileSetUniqueUsernameError = variant {
+  UsernameAlreadyTaken;
+  UserIndexCrossCanisterCallFailed;
+  SendingCanisterDoesNotMatchUserCanisterId;
+  NotAuthorized;
+  UserCanisterEntryDoesNotExist;
+};
+type UserProfile = record {
+  unique_user_name : opt text;
+  profile_picture_url : opt text;
+  display_name : opt text;
+  principal_id : opt principal;
+  profile_stats : UserProfileGlobalStats;
+};
+type UserProfileDetailsForFrontend = record {
+  unique_user_name : opt text;
+  lifetime_earnings : nat64;
+  following_count : nat64;
+  profile_picture_url : opt text;
+  display_name : opt text;
+  principal_id : principal;
+  profile_stats : UserProfileGlobalStats;
+  followers_count : nat64;
+};
+type UserProfileGlobalStats = record {
+  hot_bets_received : nat64;
+  not_bets_received : nat64;
+};
+type UserProfileUpdateDetailsFromFrontend = record {
+  profile_picture_url : opt text;
+  display_name : opt text;
+};
+service : (IndividualUserTemplateInitArgs) -> {
+  add_post_v2 : (PostDetailsFromFrontend) -> (Result);
+  backup_data_to_backup_canister : (principal, principal) -> ();
+  bet_on_currently_viewing_post : (PlaceBetArg) -> (Result_1);
+  do_i_follow_this_user : (FolloweeArg) -> (Result_2) query;
+  get_entire_individual_post_detail_by_id : (nat64) -> (Result_3) query;
+  get_hot_or_not_bet_details_for_this_post : (nat64) -> (BettingStatus) query;
+  get_hot_or_not_bets_placed_by_this_profile_with_pagination : (nat64) -> (
+      vec PlacedBetDetail,
+    ) query;
+  get_individual_hot_or_not_bet_placed_by_this_profile : (principal, nat64) -> (
+      opt PlacedBetDetail,
+    ) query;
+  get_individual_post_details_by_id : (nat64) -> (PostDetailsForFrontend) query;
+  get_posts_of_this_user_profile_with_pagination : (nat64, nat64) -> (
+      Result_4,
+    ) query;
+  get_principals_that_follow_this_profile_paginated : (opt nat64) -> (
+      vec record { nat64; FollowEntryDetail },
+    ) query;
+  get_principals_this_profile_follows_paginated : (opt nat64) -> (
+      vec record { nat64; FollowEntryDetail },
+    ) query;
+  get_profile_details : () -> (UserProfileDetailsForFrontend) query;
+  get_rewarded_for_referral : (principal, principal) -> ();
+  get_rewarded_for_signing_up : () -> ();
+  get_user_caniser_cycle_balance : () -> (nat) query;
+  get_user_utility_token_transaction_history_with_pagination : (
+      nat64,
+      nat64,
+    ) -> (Result_5) query;
+  get_utility_token_balance : () -> (nat64) query;
+  get_well_known_principal_value : (KnownPrincipalType) -> (
+      opt principal,
+    ) query;
+  receive_bet_from_bet_makers_canister : (PlaceBetArg, principal) -> (Result_1);
+  receive_bet_winnings_when_distributed : (nat64, BetOutcomeForBetMaker) -> ();
+  receive_my_created_posts_from_data_backup_canister : (vec Post) -> ();
+  receive_my_profile_from_data_backup_canister : (UserProfile) -> ();
+  receive_my_utility_token_balance_from_data_backup_canister : (nat64) -> ();
+  receive_my_utility_token_transaction_history_from_data_backup_canister : (
+      vec record { nat64; TokenEvent },
+    ) -> ();
+  receive_principals_i_follow_from_data_backup_canister : (vec principal) -> ();
+  receive_principals_that_follow_me_from_data_backup_canister : (
+      vec principal,
+    ) -> ();
+  return_cycles_to_user_index_canister : (opt nat) -> ();
+  update_post_add_view_details : (nat64, PostViewDetailsFromFrontend) -> ();
+  update_post_as_ready_to_view : (nat64) -> ();
+  update_post_increment_share_count : (nat64) -> (nat64);
+  update_post_toggle_like_status_by_caller : (nat64) -> (bool);
+  update_profile_display_details : (UserProfileUpdateDetailsFromFrontend) -> (
+      Result_6,
+    );
+  update_profile_set_unique_username_once : (text) -> (Result_7);
+  update_profiles_i_follow_toggle_list_with_specified_profile : (
+      FolloweeArg,
+    ) -> (Result_2);
+  update_profiles_that_follow_me_toggle_list_with_specified_profile : (
+      FollowerArg,
+    ) -> (Result_2);
+}
