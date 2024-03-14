@@ -71,6 +71,7 @@ hydrate = [
     "ic-agent/wasm-bindgen",
     "reqwest/native-tls",
     "web-sys",
+    "gloo-events",
 ]
 ssr = [
     "dep:axum",

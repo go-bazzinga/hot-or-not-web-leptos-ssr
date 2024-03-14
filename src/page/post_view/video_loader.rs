@@ -66,15 +66,18 @@ pub fn VideoView(idx: usize, muted: RwSignal<bool>) -> impl IntoView {
     // Handle video half completed action
     #[cfg(feature = "hydrate")]
     {
+        use std::cell::Cell;
         use wasm_bindgen::closure::Closure;
         use wasm_bindgen::JsCast;
 
         use web_sys::{console, AddEventListenerOptions};
 
+        let ran = Cell::new(false);
+
         create_effect(move |_| {
             let vid = container_ref()?;
 
-            let closure = Closure::<dyn FnMut(_)>::new(move |e: web_sys::Event| {
+            let closure = Callback::from(move |e: web_sys::Event| {
                 let target = e.target().unwrap();
                 let video = target.unchecked_into::<web_sys::HtmlVideoElement>();
                 let duration = video.duration() as f64;
@@ -86,13 +89,7 @@ pub fn VideoView(idx: usize, muted: RwSignal<bool>) -> impl IntoView {
                 }
             });
 
-            let _ = vid.add_event_listener_with_callback_and_add_event_listener_options(
-                "timeupdate",
-                closure.as_ref().unchecked_ref(),
-                AddEventListenerOptions::new().once(true).as_ref(),
-            );
-
-            closure.forget();
+            vid.on(ev::timeupdate, closure);
 
             Some(())
         });

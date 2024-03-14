@@ -1527,6 +1527,7 @@ dependencies = [
  "crc32fast",
  "futures",
  "gloo",
+ "gloo-events",
  "hex",
  "http 1.1.0",
  "ic-agent",
