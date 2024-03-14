@@ -63,6 +63,41 @@ pub fn VideoView(idx: usize, muted: RwSignal<bool>) -> impl IntoView {
         Some(())
     });
 
+    // Handle video half completed action
+    #[cfg(feature = "hydrate")]
+    {
+        use wasm_bindgen::closure::Closure;
+        use wasm_bindgen::JsCast;
+
+        use web_sys::{console, AddEventListenerOptions};
+
+        create_effect(move |_| {
+            let vid = container_ref()?;
+
+            let closure = Closure::<dyn FnMut(_)>::new(move |e: web_sys::Event| {
+                let target = e.target().unwrap();
+                let video = target.unchecked_into::<web_sys::HtmlVideoElement>();
+                let duration = video.duration() as f64;
+                let current_time = video.current_time() as f64;
+
+                if current_time >= duration / 2.0 {
+                    // Video is halfway done, take action here
+                    console::log_1(&"Video halfway done!".into());
+                }
+            });
+
+            let _ = vid.add_event_listener_with_callback_and_add_event_listener_options(
+                "timeupdate",
+                closure.as_ref().unchecked_ref(),
+                AddEventListenerOptions::new().once(true).as_ref(),
+            );
+
+            closure.forget();
+
+            Some(())
+        });
+    }
+
     view! {
         <label class="w-full h-full absolute top-0 left-0 grid grid-cols-1 justify-items-center items-center cursor-pointer z-[3]">
             <input

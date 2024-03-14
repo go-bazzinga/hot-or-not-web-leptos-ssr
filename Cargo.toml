@@ -53,6 +53,7 @@ web-sys = { version = "0.3", features = [
     "Clipboard",
     "Navigator",
     "ShareData",
+    "AddEventListenerOptions",
 ], optional = true }
 circular-buffer = "0.1.7"
 
