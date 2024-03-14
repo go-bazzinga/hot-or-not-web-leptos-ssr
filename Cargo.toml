@@ -53,7 +53,6 @@ web-sys = { version = "0.3", features = [
     "Clipboard",
     "Navigator",
     "ShareData",
-    "AddEventListenerOptions",
 ], optional = true }
 circular-buffer = "0.1.7"
 
@@ -71,7 +70,7 @@ hydrate = [
     "ic-agent/wasm-bindgen",
     "reqwest/native-tls",
     "web-sys",
-    "gloo-events",
+    "gtag-js",
 ]
 ssr = [
     "dep:axum",
@@ -90,13 +89,14 @@ ssr = [
 # Fetch mock referral history instead of history via canister
 mock-referral-history = ["rand_chacha", "k256/arithmetic"]
 # Fetch mock wallet transactions instead of history via canister
+
+backend-admin = []
+
 mock-wallet-history = ["rand_chacha"]
 mock-history = ["mock-referral-history", "mock-wallet-history"]
 cloudflare = []
-backend-admin = []
 release-bin = ["ssr", "cloudflare", "backend-admin"]
 release-lib = ["hydrate", "cloudflare", "backend-admin"]
-
 [patch.crates-io]
 # release with hyper v1 is not out yet
 reqwest = { git = "https://github.com/seanmonstar/reqwest.git", rev = "e3192638518d577759dd89da489175b8f992b12f" }
