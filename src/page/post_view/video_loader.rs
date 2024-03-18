@@ -1,7 +1,10 @@
 use std::cell::Cell;
 
-use crate::canister::utils::{bg_url, mp4_url};
+use crate::{
+    canister::utils::{bg_url, mp4_url}, state::canisters::{authenticated_canisters, Canisters}, try_or_redirect_opt, utils::{profile::ProfileDetails, MockPartialEq}
+};
 use leptos::{html::Video, *};
+use wasm_bindgen::JsValue;
 
 use super::{overlay::VideoDetailsOverlay, PostViewCtx};
 
@@ -31,6 +34,31 @@ pub fn VideoView(idx: usize, muted: RwSignal<bool>) -> impl IntoView {
         current_idx,
         ..
     } = expect_context();
+
+    let canisters = authenticated_canisters();
+    let profile_details = create_resource(
+        move || MockPartialEq(canisters.get().and_then(|c| c.transpose())),
+        move |canisters| async move {
+            let canisters = try_or_redirect_opt!(canisters.0?);
+            let user = canisters.authenticated_user();
+            let user_details = user.get_profile_details().await.ok()?;
+            Some((ProfileDetails::from(user_details), canisters.user_canister()))
+        },
+    );
+
+    let vid_details =
+        create_memo(move |_| with!(|video_queue| video_queue.get(idx).map(|q| q.clone())));
+    let publisher_canister_id = move || vid_details().as_ref().map(|q| q.poster_principal);
+    let user_id = move || profile_details().flatten().map(|(q, _)| q.principal);
+    let is_loggedin = move || user_id().is_some();
+    let display_name = move || profile_details().flatten().map(|(q, _)| q.display_name);
+    let canister_id = move || profile_details().flatten().map(|(_, q)| q);
+    let video_id = move || vid_details().as_ref().map(|q| q.uid.clone());
+    let hastag_count = move || vid_details().as_ref().map(|q| q.hastags.len());
+    let is_nsfw = move || vid_details().as_ref().map(|q| q.is_nsfw);
+    let is_hotornot = move || vid_details().as_ref().map(|q| q.hot_or_not_feed_ranking_score.is_some());
+    let view_count = move || vid_details().as_ref().map(|q| q.views);
+    let like_count = move || vid_details().as_ref().map(|q| q.likes);
 
     let uid =
         create_memo(move |_| with!(|video_queue| video_queue.get(idx).map(|q| q.uid.clone())));
@@ -65,10 +93,10 @@ pub fn VideoView(idx: usize, muted: RwSignal<bool>) -> impl IntoView {
         Some(())
     });
 
-    // Handle video half completed action
+    // Handle video watch completed action
     #[cfg(feature = "hydrate")]
     {
-        use gtag_js::DataLayer;
+        use crate::utils::event_streaming::send_event;
         use serde_json::json;
         use wasm_bindgen::JsCast;
         use web_sys::console;
@@ -86,18 +114,32 @@ pub fn VideoView(idx: usize, muted: RwSignal<bool>) -> impl IntoView {
 
                 let target = e.target().unwrap();
                 let video = target.unchecked_into::<web_sys::HtmlVideoElement>();
-                let duration = video.duration() as f64;
+                // let duration = video.duration() as f64;
                 let current_time = video.current_time() as f64;
 
                 if current_time >= 3.0 {
                     // Video is halfway done, take action here
 
-                    let gtag_res = DataLayer::new("G-R925ERNSQE");
-                    let res = gtag_res.push_simple("video_viewed");
-                    // if let Err(e) = res {
-                    //     console::log_1(&format!("Error pushing to gtag: {}", e).into());
-                    // }
-
+                    send_event(
+                        "video_viewed",
+                        &json!({
+                            "publisher_user_id":publisher_canister_id(),
+                            "user_id":user_id(),
+                            "is_loggedIn": is_loggedin(),
+                            "display_name": display_name(),
+                            "canister_id": canister_id(),
+                            "video_id": video_id(),
+                            "video_category": "NA",
+                            "creator_category": "NA",
+                            "hashtag_count": hastag_count(),
+                            "is_NSFW": is_nsfw(),
+                            "is_hotorNot": is_hotornot(),
+                            "feed_type": "NA",
+                            "view_count": view_count(),
+                            "like_count": like_count(),
+                            "share_count": 0,
+                        }),
+                    );
                     console::log_1(&"video_viewed!".into());
                     set_has_halfway_action_been_performed.set(true);
                 }

@@ -14,11 +14,7 @@ use leptos_use::{
 };
 
 use crate::{
-    component::spinner::FullScreenSpinner,
-    consts::NSFW_TOGGLE_STORE,
-    state::canisters::{authenticated_canisters, unauth_canisters},
-    try_or_redirect,
-    utils::route::{failure_redirect, go_to_root},
+    component::spinner::FullScreenSpinner, consts::NSFW_TOGGLE_STORE, state::canisters::{authenticated_canisters, unauth_canisters}, try_or_redirect, try_or_redirect_opt, utils::{profile::ProfileDetails, route::{failure_redirect, go_to_root}, MockPartialEq}
 };
 use video_iter::{get_post_uid, VideoFetchStream};
 use video_loader::{BgView, VideoView};
@@ -247,6 +243,20 @@ pub fn PostViewWithUpdates(initial_post: Option<PostDetails>) -> impl IntoView {
 
 #[component]
 pub fn PostView() -> impl IntoView {
+    // user profile details
+    let canisters = authenticated_canisters();
+    let profile_details = create_resource(
+        move || MockPartialEq(canisters.get().and_then(|c| c.transpose())),
+        move |canisters| async move {
+            let canisters = try_or_redirect_opt!(canisters.0?);
+            let user = canisters.authenticated_user();
+            let user_details = user.get_profile_details().await.ok()?;
+            Some((ProfileDetails::from(user_details), canisters.user_canister()))
+        },
+    );
+    provide_context(profile_details);
+
+
     let params = use_params::<PostParams>();
     let canister_and_post = move || {
         params.with_untracked(|p| {

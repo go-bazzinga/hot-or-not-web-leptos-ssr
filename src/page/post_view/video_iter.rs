@@ -97,6 +97,9 @@ pub struct PostDetails {
     /// user or not, None if unknown
     pub liked_by_user: Option<bool>,
     pub poster_principal: Principal,
+    pub hastags: Vec<String>,
+    pub is_nsfw: bool,
+    pub hot_or_not_feed_ranking_score: Option<u64>,
 }
 
 impl PostDetails {
@@ -121,6 +124,9 @@ impl PostDetails {
                 .unwrap_or_else(|| propic_from_principal(details.created_by_user_principal_id)),
             liked_by_user: authenticated.then_some(details.liked_by_me),
             poster_principal: details.created_by_user_principal_id,
+            hastags: details.hashtags,
+            is_nsfw: details.is_nsfw,
+            hot_or_not_feed_ranking_score: details.hot_or_not_feed_ranking_score,
         }
     }
 }

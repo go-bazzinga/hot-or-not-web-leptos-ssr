@@ -1427,27 +1427,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gtag-js"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9defcacebac152580ad7e35ab3b7faf261a2b57371653046c5f95575dd8cb867"
-dependencies = [
- "gtag-js-sys",
- "serde",
- "serde_json",
- "wasm-bindgen",
-]
-
-[[package]]
-name = "gtag-js-sys"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92318b600e6f663517dd4c8044b9ecaf716d322384eb3a223d1ad3af9c037b7e"
-dependencies = [
- "wasm-bindgen",
-]
-
-[[package]]
 name = "h2"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1548,7 +1527,7 @@ dependencies = [
  "crc32fast",
  "futures",
  "gloo",
- "gtag-js",
+ "gloo-utils 0.2.0",
  "hex",
  "http 1.1.0",
  "ic-agent",
@@ -4444,8 +4423,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4be2531df63900aeb2bca0daaaddec08491ee64ceecbee5076636a3b026795a8"
 dependencies = [
  "cfg-if",
- "serde",
- "serde_json",
  "wasm-bindgen-macro",
 ]
 

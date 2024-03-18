@@ -1,5 +1,6 @@
 use web_time::{Duration, SystemTime};
 
+pub mod event_streaming;
 pub mod icon;
 pub mod profile;
 pub mod route;
