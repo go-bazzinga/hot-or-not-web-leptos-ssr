@@ -57,12 +57,14 @@ web-sys = { version = "0.3", features = [
     "ShareData",
 ], optional = true }
 gloo-utils = { version = "0.2.0", features = ["serde"] }
+circular-buffer = "0.1.7"
+
+
 [build-dependencies]
 serde = { version = "1.0", features = ["derive"] }
 candid_parser = "0.1.1"
 serde_json = "1.0.110"
 convert_case = "0.6.0"
-circular-buffer = "0.1.7"
 
 [features]
 hydrate = [
