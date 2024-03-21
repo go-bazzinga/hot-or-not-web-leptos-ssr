@@ -1,7 +1,10 @@
 use std::cell::Cell;
 
 use crate::{
-    canister::utils::{bg_url, mp4_url}, state::canisters::{authenticated_canisters, Canisters}, try_or_redirect_opt, utils::{profile::ProfileDetails, MockPartialEq}
+    canister::utils::{bg_url, mp4_url},
+    state::canisters::{authenticated_canisters, Canisters},
+    try_or_redirect_opt,
+    utils::{profile::ProfileDetails, MockPartialEq},
 };
 use leptos::{html::Video, *};
 use wasm_bindgen::JsValue;
@@ -42,7 +45,10 @@ pub fn VideoView(idx: usize, muted: RwSignal<bool>) -> impl IntoView {
             let canisters = try_or_redirect_opt!(canisters.0?);
             let user = canisters.authenticated_user();
             let user_details = user.get_profile_details().await.ok()?;
-            Some((ProfileDetails::from(user_details), canisters.user_canister()))
+            Some((
+                ProfileDetails::from(user_details),
+                canisters.user_canister(),
+            ))
         },
     );
 
@@ -56,7 +62,11 @@ pub fn VideoView(idx: usize, muted: RwSignal<bool>) -> impl IntoView {
     let video_id = move || vid_details().as_ref().map(|q| q.uid.clone());
     let hastag_count = move || vid_details().as_ref().map(|q| q.hastags.len());
     let is_nsfw = move || vid_details().as_ref().map(|q| q.is_nsfw);
-    let is_hotornot = move || vid_details().as_ref().map(|q| q.hot_or_not_feed_ranking_score.is_some());
+    let is_hotornot = move || {
+        vid_details()
+            .as_ref()
+            .map(|q| q.hot_or_not_feed_ranking_score.is_some())
+    };
     let view_count = move || vid_details().as_ref().map(|q| q.views);
     let like_count = move || vid_details().as_ref().map(|q| q.likes);
 

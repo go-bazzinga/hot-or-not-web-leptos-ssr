@@ -14,7 +14,15 @@ use leptos_use::{
 };
 
 use crate::{
-    component::spinner::FullScreenSpinner, consts::NSFW_TOGGLE_STORE, state::canisters::{authenticated_canisters, unauth_canisters}, try_or_redirect, try_or_redirect_opt, utils::{profile::ProfileDetails, route::{failure_redirect, go_to_root}, MockPartialEq}
+    component::spinner::FullScreenSpinner,
+    consts::NSFW_TOGGLE_STORE,
+    state::canisters::{authenticated_canisters, unauth_canisters},
+    try_or_redirect, try_or_redirect_opt,
+    utils::{
+        profile::ProfileDetails,
+        route::{failure_redirect, go_to_root},
+        MockPartialEq,
+    },
 };
 use video_iter::{get_post_uid, VideoFetchStream};
 use video_loader::{BgView, VideoView};
@@ -251,11 +259,13 @@ pub fn PostView() -> impl IntoView {
             let canisters = try_or_redirect_opt!(canisters.0?);
             let user = canisters.authenticated_user();
             let user_details = user.get_profile_details().await.ok()?;
-            Some((ProfileDetails::from(user_details), canisters.user_canister()))
+            Some((
+                ProfileDetails::from(user_details),
+                canisters.user_canister(),
+            ))
         },
     );
     provide_context(profile_details);
-
 
     let params = use_params::<PostParams>();
     let canister_and_post = move || {
