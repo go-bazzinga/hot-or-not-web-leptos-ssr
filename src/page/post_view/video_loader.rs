@@ -1,13 +1,10 @@
-use std::cell::Cell;
-
 use crate::{
     canister::utils::{bg_url, mp4_url},
-    state::canisters::{authenticated_canisters, Canisters},
-    try_or_redirect_opt,
+    state::canisters::{Canisters, CanistersError},
     utils::{profile::ProfileDetails, MockPartialEq},
 };
+use candid::Principal;
 use leptos::{html::Video, *};
-use wasm_bindgen::JsValue;
 
 use super::{overlay::VideoDetailsOverlay, PostViewCtx};
 
@@ -38,27 +35,27 @@ pub fn VideoView(idx: usize, muted: RwSignal<bool>) -> impl IntoView {
         ..
     } = expect_context();
 
-    let canisters = authenticated_canisters();
-    let profile_details = create_resource(
-        move || MockPartialEq(canisters.get().and_then(|c| c.transpose())),
-        move |canisters| async move {
-            let canisters = try_or_redirect_opt!(canisters.0?);
-            let user = canisters.authenticated_user();
-            let user_details = user.get_profile_details().await.ok()?;
-            Some((
-                ProfileDetails::from(user_details),
-                canisters.user_canister(),
-            ))
-        },
-    );
+    let profile_and_canister_details: Resource<
+        MockPartialEq<Option<Result<Canisters<true>, CanistersError>>>,
+        Option<(ProfileDetails, Principal)>,
+    > = expect_context();
 
     let vid_details =
         create_memo(move |_| with!(|video_queue| video_queue.get(idx).map(|q| q.clone())));
-    let publisher_canister_id = move || vid_details().as_ref().map(|q| q.poster_principal);
-    let user_id = move || profile_details().flatten().map(|(q, _)| q.principal);
+
+    let publisher_user_id = move || vid_details().as_ref().map(|q| q.poster_principal);
+    let user_id = move || {
+        profile_and_canister_details()
+            .flatten()
+            .map(|(q, _)| q.principal)
+    };
     let is_loggedin = move || user_id().is_some();
-    let display_name = move || profile_details().flatten().map(|(q, _)| q.display_name);
-    let canister_id = move || profile_details().flatten().map(|(_, q)| q);
+    let display_name = move || {
+        profile_and_canister_details()
+            .flatten()
+            .map(|(q, _)| q.display_name)
+    };
+    let canister_id = move || profile_and_canister_details().flatten().map(|(_, q)| q);
     let video_id = move || vid_details().as_ref().map(|q| q.uid.clone());
     let hastag_count = move || vid_details().as_ref().map(|q| q.hastags.len());
     let is_nsfw = move || vid_details().as_ref().map(|q| q.is_nsfw);
@@ -103,22 +100,20 @@ pub fn VideoView(idx: usize, muted: RwSignal<bool>) -> impl IntoView {
         Some(())
     });
 
-    // Handle video watch completed action
+    // video_viewed - analytics
     #[cfg(feature = "hydrate")]
     {
         use crate::utils::event_streaming::send_event;
         use serde_json::json;
         use wasm_bindgen::JsCast;
-        use web_sys::console;
 
-        let (has_halfway_action_been_performed, set_has_halfway_action_been_performed) =
-            create_signal(false);
+        let (video_watched, set_video_watched) = create_signal(false);
 
         create_effect(move |_| {
             let vid = container_ref()?;
 
             let callback = move |e: web_sys::Event| {
-                if has_halfway_action_been_performed.get() {
+                if video_watched.get() {
                     return;
                 }
 
@@ -133,7 +128,7 @@ pub fn VideoView(idx: usize, muted: RwSignal<bool>) -> impl IntoView {
                     send_event(
                         "video_viewed",
                         &json!({
-                            "publisher_user_id":publisher_canister_id(),
+                            "publisher_user_id":publisher_user_id(),
                             "user_id":user_id(),
                             "is_loggedIn": is_loggedin(),
                             "display_name": display_name(),
@@ -150,8 +145,7 @@ pub fn VideoView(idx: usize, muted: RwSignal<bool>) -> impl IntoView {
                             "share_count": 0,
                         }),
                     );
-                    console::log_1(&"video_viewed!".into());
-                    set_has_halfway_action_been_performed.set(true);
+                    set_video_watched.set(true);
                 }
             };
 

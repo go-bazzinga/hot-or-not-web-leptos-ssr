@@ -251,21 +251,6 @@ pub fn PostViewWithUpdates(initial_post: Option<PostDetails>) -> impl IntoView {
 
 #[component]
 pub fn PostView() -> impl IntoView {
-    // user profile details
-    let canisters = authenticated_canisters();
-    let profile_details = create_resource(
-        move || MockPartialEq(canisters.get().and_then(|c| c.transpose())),
-        move |canisters| async move {
-            let canisters = try_or_redirect_opt!(canisters.0?);
-            let user = canisters.authenticated_user();
-            let user_details = user.get_profile_details().await.ok()?;
-            Some((
-                ProfileDetails::from(user_details),
-                canisters.user_canister(),
-            ))
-        },
-    );
-    provide_context(profile_details);
 
     let params = use_params::<PostParams>();
     let canister_and_post = move || {

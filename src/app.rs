@@ -16,9 +16,11 @@ use crate::{
     },
     state::{
         auth::{AuthClient, AuthState},
-        canisters::Canisters,
+        canisters::{authenticated_canisters, unauth_canisters, Canisters},
         history::HistoryCtx,
     },
+    try_or_redirect_opt,
+    utils::{profile::ProfileDetails, MockPartialEq},
 };
 use leptos::*;
 use leptos_meta::*;

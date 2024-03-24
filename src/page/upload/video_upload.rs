@@ -5,9 +5,9 @@ use super::{
 use crate::{
     canister::individual_user_template::{PostDetailsFromFrontend, Result_},
     component::modal::Modal,
-    state::canisters::{authenticated_canisters, Canisters},
+    state::canisters::{authenticated_canisters, Canisters, CanistersError},
     try_or_redirect, try_or_redirect_opt,
-    utils::route::{failure_redirect, go_to_root},
+    utils::{event_streaming::send_event, profile::ProfileDetails, route::{failure_redirect, go_to_root}, MockPartialEq},
 };
 use candid::Principal;
 use futures::StreamExt;
@@ -19,6 +19,7 @@ use leptos::{
 };
 use leptos_icons::*;
 use leptos_use::use_event_listener;
+use serde_json::json;
 use web_time::SystemTime;
 
 #[component]
@@ -56,6 +57,24 @@ pub fn PreVideoUpload(file_blob: WriteSignal<Option<FileWithUrl>>) -> impl IntoV
     let video_ref = create_node_ref::<Video>();
     let modal_show = create_rw_signal(false);
 
+
+    let profile_and_canister_details: Resource<
+        MockPartialEq<Option<Result<Canisters<true>, CanistersError>>>,
+        Option<(ProfileDetails, Principal)>,
+    > = expect_context();
+    let user_id = move || {
+        profile_and_canister_details()
+            .flatten()
+            .map(|(q, _)| q.principal)
+    };
+    let display_name = move || {
+        profile_and_canister_details()
+            .flatten()
+            .map(|(q, _)| q.display_name)
+    };
+    let canister_id = move || profile_and_canister_details().flatten().map(|(_, q)| q);
+
+
     #[cfg(feature = "hydrate")]
     {
         use leptos::ev::change;
@@ -66,6 +85,20 @@ pub fn PreVideoUpload(file_blob: WriteSignal<Option<FileWithUrl>>) -> impl IntoV
                 let input: &HtmlInputElement = target.dyn_ref()?;
                 let inp_file = input.files()?.get(0)?;
                 file.set(Some(FileWithUrl::new(inp_file.into())));
+
+                // video_upload_video_selected - analytics    
+                create_effect(move |_| {
+                    send_event(
+                        "video_upload_video_selected",
+                        &json!({
+                            "user_id":user_id(),
+                            "display_name": display_name(),
+                            "canister_id": canister_id(),
+                            "creator_category": "NA",
+                        }),
+                    );
+                });
+            
                 Some(())
             });
         });
@@ -172,6 +205,23 @@ pub fn VideoUploader(params: UploadParams) -> impl IntoView {
 
     let up_hashtags = hashtags.clone();
     let up_desc = description.clone();
+
+    let profile_and_canister_details: Resource<
+        MockPartialEq<Option<Result<Canisters<true>, CanistersError>>>,
+        Option<(ProfileDetails, Principal)>,
+    > = expect_context();
+    let user_id = move || {
+        profile_and_canister_details()
+            .flatten()
+            .map(|(q, _)| q.principal)
+    };
+    let display_name = move || {
+        profile_and_canister_details()
+            .flatten()
+            .map(|(q, _)| q.display_name)
+    };
+    let canister_id = move || profile_and_canister_details().flatten().map(|(_, q)| q);
+
     let upload_action = create_action(move |_: &()| {
         let hashtags = up_hashtags.clone();
         let description = up_desc.clone();
@@ -213,6 +263,7 @@ pub fn VideoUploader(params: UploadParams) -> impl IntoView {
     let publish_action = create_action(move |(canisters, uid): &(Canisters<true>, String)| {
         let canisters = canisters.clone();
         let hashtags = hashtags.clone();
+        let hashtags_len = hashtags.len();
         let description = description.clone();
         let uid = uid.clone();
         async move {
@@ -237,6 +288,26 @@ pub fn VideoUploader(params: UploadParams) -> impl IntoView {
             let res = user.update_post_as_ready_to_view(post_id).await;
             try_or_redirect!(res);
             publishing.set(false);
+
+            // video_upload_successul - analytics
+            #[cfg(feature = "hydrate")]
+            {
+                create_effect(move |_| {
+                    send_event(
+                        "video_upload_successul",
+                        &json!({
+                            "user_id":user_id(),
+                            "display_name": display_name(),
+                            "canister_id": canister_id(),
+                            "creator_category": "NA",
+                            "hashtag_count": hashtags_len,
+                            "is_NSFW": params.is_nsfw,
+                            "is_hotorNot": params.enable_hot_or_not,
+                            "is_filter_used": false,
+                        }),
+                    );
+                });
+            }
         }
     });
 
