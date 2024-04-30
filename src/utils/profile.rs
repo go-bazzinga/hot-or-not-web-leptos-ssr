@@ -184,9 +184,8 @@ impl CursoredDataProvider for PostsProvider {
         end: usize,
     ) -> Result<PageEntry<PostDetails>, AgentError> {
         let user = self.canisters.individual_user(self.user);
-        let limit = end - start;
         let posts = user
-            .get_posts_of_this_user_profile_with_pagination_cursor(start as u64, limit as u64)
+            .get_posts_of_this_user_profile_with_pagination_cursor(start as u64, end as u64)
             .await?;
         let posts = match posts {
             Result5::Ok(v) => v,

@@ -1,6 +1,5 @@
 mod ic;
 mod posts;
-pub mod profile_post;
 mod speculation;
 
 use candid::Principal;

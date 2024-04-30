@@ -1,5 +1,5 @@
 mod error;
-pub mod overlay;
+mod overlay;
 pub mod video_iter;
 mod video_loader;
 

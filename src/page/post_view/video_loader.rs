@@ -9,7 +9,7 @@ use crate::{
         individual_user_template::PostViewDetailsFromFrontend,
         utils::{bg_url, mp4_url},
     },
-    component::{feed_popup::FeedPopUp, video_player::VideoPlayer},
+    component::feed_popup::FeedPopUp,
     state::{
         auth::account_connected_reader, canisters::unauth_canisters,
         local_storage::use_referrer_store,
@@ -201,6 +201,25 @@ pub fn VideoView(idx: usize, muted: RwSignal<bool>) -> impl IntoView {
     VideoWatched.send_event(vid_details, container_ref);
 
     view! {
-        <VideoPlayer node_ref=container_ref view_bg_url = Signal::derive(view_bg_url) view_video_url=Signal::derive(view_video_url)/>
+        <label class="w-full h-full absolute top-0 left-0 grid grid-cols-1 justify-items-center items-center cursor-pointer z-[3]">
+            <input
+                on:change=move |_| muted.update(|m| *m = !*m)
+                type="checkbox"
+                value=""
+                class="sr-only"
+            />
+            <video
+                _ref=container_ref
+                class="object-contain h-dvh max-h-dvh cursor-pointer"
+                poster=view_bg_url
+                src=view_video_url
+                loop
+                muted
+                playsinline
+                disablepictureinpicture
+                disableremoteplayback
+                preload="auto"
+            ></video>
+        </label>
     }
 }
