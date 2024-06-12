@@ -81,7 +81,8 @@ redis = { version = "0.25.2", features = [
 ], default-features = false, optional = true }
 bb8 = { version = "0.8.3", optional = true }
 bb8-redis = { version = "0.15.0", optional = true }
-gob-cloudflare = { git = "https://github.com/go-bazzinga/gob-cloudflare", rev = "c847ba87ecc73a33520b24bd62503420d7e23e3e", default-features = false, optional = true }
+# gob-cloudflare = { git = "https://github.com/go-bazzinga/gob-cloudflare", rev = "c847ba87ecc73a33520b24bd62503420d7e23e3e", default-features = false, optional = true }
+gob-cloudflare = { path = "../gob-cloudflare", default-features = false, optional = true }
 yral-metadata-client = { git = "https://github.com/go-bazzinga/yral-metadata", rev = "c2c5d254ac273681a66966d62b6f01785679a1be", default-features = false }
 yral-metadata-types = { git = "https://github.com/go-bazzinga/yral-metadata", rev = "c2c5d254ac273681a66966d62b6f01785679a1be", default-features = false }
 

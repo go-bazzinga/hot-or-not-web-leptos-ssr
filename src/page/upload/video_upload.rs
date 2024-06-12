@@ -1,5 +1,7 @@
 use super::{
-    cf_upload::{get_upload_info, get_video_status, publish_video, upload_video_stream},
+    cf_upload::{
+        edit_video_meta, get_upload_info, get_video_status, publish_video, upload_video_stream,
+    },
     UploadParams,
 };
 use crate::{
@@ -285,20 +287,32 @@ pub fn VideoUploader(params: UploadParams) -> impl IntoView {
             )
             .await;
 
-            if res.is_err() {
-                let e = res.as_ref().err().unwrap().to_string();
-                VideoUploadUnsuccessful.send_event(
-                    e,
-                    hashtags_len,
-                    is_nsfw,
-                    enable_hot_or_not,
-                    canister_store,
-                );
-            }
 
-            try_or_redirect_opt!(res);
+            match res {
+                Ok(post_id ) => {
+                    let video_meta_res = edit_video_meta(uid.clone(), post_id).await;
+                    try_or_redirect_opt!(video_meta_res);
+                },
+                Err(err) => {
+                    // let e = res.as_ref().err().unwrap().to_string();
+                    let e = err.to_string();
+                    VideoUploadUnsuccessful.send_event(
+                        e,
+                        hashtags_len,
+                        is_nsfw,
+                        enable_hot_or_not,
+                        canister_store,
+                    );
+                }
+            };
+
 
             publishing.set(false);
+            
+            // this is just to track whether webhook was received or not in off-chain-agent
+            // false means webhook not received yet
+            let _ = perform_webhook_kv_update(uid.clone()).await;
+
 
             VideoUploadSuccessful.send_event(
                 uid,
@@ -353,4 +367,11 @@ pub fn VideoUploader(params: UploadParams) -> impl IntoView {
             </button>
         </div>
     }
+}
+
+
+#[server] 
+async fn perform_webhook_kv_update(uid: String) -> Result<(), ServerFnError>{
+    use crate::auth::server_impl::webhook_kv_update_impl;
+    Ok(webhook_kv_update_impl(uid).await?)
 }

@@ -1666,7 +1666,6 @@ dependencies = [
 [[package]]
 name = "gob-cloudflare"
 version = "0.1.0"
-source = "git+https://github.com/go-bazzinga/gob-cloudflare?rev=c847ba87ecc73a33520b24bd62503420d7e23e3e#c847ba87ecc73a33520b24bd62503420d7e23e3e"
 dependencies = [
  "bytes",
  "reqwest 0.12.4",

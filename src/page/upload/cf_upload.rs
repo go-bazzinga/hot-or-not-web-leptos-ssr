@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 pub struct UploadInfo {
     pub uid: String,
+    // pub creator_id: String,
     pub upload_url: String,
 }
 
@@ -42,6 +43,11 @@ pub async fn get_video_status(uid: String) -> Result<String, ServerFnError> {
     get_video_status_impl(uid).await
 }
 
+#[server(EditVideoMeta)]
+pub async fn edit_video_meta(uid: String, post_id: u64) -> Result<String, ServerFnError> {
+    edit_video_meta_impl(uid, post_id).await
+}
+
 #[cfg(feature = "cloudflare")]
 mod cf_impl {
     use leptos::ServerFnError;
@@ -57,15 +63,32 @@ mod cf_impl {
     pub mod server_func {
         use candid::Principal;
         use gob_cloudflare::{
-            api::stream_videos::{CreateDownloads, DirectUpload, VideoDetails},
+            api::stream_videos::{CreateDownloads, DirectUpload, EditVideoDetails, VideoDetails},
             CloudflareAuth,
         };
-        use leptos::{expect_context, ServerFnError};
+        use leptos::{expect_context, server_fn::ServerFn, ServerFnError};
 
         use crate::consts::CF_WATERMARK_UID;
 
         use super::UploadInfo;
         use std::time::Duration;
+
+        pub async fn edit_video_meta_impl(
+            uid: String,
+            post_id: u64,
+        ) -> Result<String, ServerFnError> {
+            let cf_api: CloudflareAuth = expect_context();
+            // get the existing meta from video
+            let req = VideoDetails::new(uid.clone());
+            let res = cf_api.send_auth(req).await?;
+            let meta = res.meta;
+
+            // add new meta to the video
+            let req = EditVideoDetails::new(uid, meta).add_meta("post_id", post_id.to_string());
+            let res = cf_api.send_auth(req).await?;
+
+            Ok(res.status.state)
+        }
 
         pub async fn get_upload_info_impl(
             creator: Principal,
@@ -80,6 +103,7 @@ mod cf_impl {
                 .add_meta("description", description)
                 .add_meta("fileName", file_name)
                 .add_meta("uploadType", "challenge")
+                .add_meta("creator", creator.to_text())
                 .watermark(CF_WATERMARK_UID)
                 .max_duration(Duration::from_secs(60));
             let res = cf_api.send_auth(req).await?;
@@ -87,6 +111,7 @@ mod cf_impl {
             Ok(UploadInfo {
                 uid: res.uid,
                 upload_url: res.upload_url,
+                // creator_id: creator.to_text()
             })
         }
 
@@ -128,7 +153,7 @@ mod cf_impl {
         uid: String,
         enable_hot_or_not: bool,
         is_nsfw: bool,
-    ) -> Result<(), ServerFnError> {
+    ) -> Result<u64, ServerFnError> {
         let user = canisters.authenticated_user();
         let res = user
             .add_post_v_2(PostDetailsFromFrontend {
@@ -139,12 +164,11 @@ mod cf_impl {
                 is_nsfw,
             })
             .await?;
-        let post_id = match res {
-            Result_::Ok(p) => p,
+        match res {
+            Result_::Ok(p) => Ok(p),
             Result_::Err(e) => return Err(ServerFnError::new(e)),
-        };
-        user.update_post_as_ready_to_view(post_id).await?;
-        Ok(())
+        }
+        // user.update_post_as_ready_to_view(post_id).await?;
     }
 }
 
@@ -177,6 +201,14 @@ mod mock_impl {
         pub async fn get_video_status_impl(_uid: String) -> Result<String, ServerFnError> {
             tokio::time::sleep(Duration::from_secs(2)).await;
             Ok("ready".into())
+        }
+
+        pub async fn edit_video_meta_impl(
+            _uid: String,
+            _post_id: u64,
+        ) -> Result<String, ServerFnError> {
+            tokio::time::sleep(Duration::from_secs(2)).await;
+            Ok("processing".into())
         }
     }
 
