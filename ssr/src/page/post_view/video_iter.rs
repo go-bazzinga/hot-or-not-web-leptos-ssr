@@ -6,7 +6,7 @@ use futures::{stream::FuturesOrdered, Stream, StreamExt};
 use crate::{
     canister::post_cache::{self, NsfwFilter},
     state::canisters::Canisters,
-    utils::posts::{get_post_uid, FetchCursor, PostDetails, PostViewError},
+    utils::{ml_feed::{MLFeed}, posts::{get_post_uid, FetchCursor, PostDetails, PostViewError}},
 };
 
 pub async fn post_liked_by_me(
@@ -30,12 +30,13 @@ pub struct FetchVideosRes<'a> {
 
 pub struct VideoFetchStream<'a, const AUTH: bool> {
     canisters: &'a Canisters<AUTH>,
+    ml_feed: &'a MLFeed,
     cursor: FetchCursor,
 }
 
 impl<'a, const AUTH: bool> VideoFetchStream<'a, AUTH> {
-    pub fn new(canisters: &'a Canisters<AUTH>, cursor: FetchCursor) -> Self {
-        Self { canisters, cursor }
+    pub fn new(canisters: &'a Canisters<AUTH>, ml_feed: &'a MLFeed, cursor: FetchCursor) -> Self {
+        Self { canisters, ml_feed, cursor }
     }
 
     pub async fn fetch_post_uids_chunked(
@@ -73,6 +74,53 @@ impl<'a, const AUTH: bool> VideoFetchStream<'a, AUTH> {
 
         let end = top_posts.len() < self.cursor.limit as usize;
         let chunk_stream = top_posts
+            .into_iter()
+            .map(move |item| get_post_uid(self.canisters, item.publisher_canister_id, item.post_id))
+            .collect::<FuturesOrdered<_>>()
+            .filter_map(|res| async { res.transpose() })
+            .chunks(chunks);
+
+        Ok(FetchVideosRes {
+            posts_stream: Box::pin(chunk_stream),
+            end,
+        })
+    }
+
+    pub async fn fetch_post_uids_chunked_mlfeed(
+        self,
+        chunks: usize,
+        allow_nsfw: bool,
+    ) -> Result<FetchVideosRes<'a>, PostViewError> {
+
+        let mut posts_fut;
+
+        #[cfg(not(feature = "local-feed"))]
+        {
+            use crate::utils::ml_feed::ml_feed_impl;
+
+            posts_fut = ml_feed_impl::get_next_feed();
+        }
+
+        #[cfg(feature = "local-feed")]
+        {
+            use crate::utils::ml_feed::local_feed_impl;
+
+            posts_fut = local_feed_impl::get_next_feed();
+        }
+
+
+        let posts = match posts_fut.await? {
+            Ok(posts) => posts,
+            Err(_) => {
+                // TODO: change this error type
+                return Err(PostViewError::Canister(
+                    "Feed server error".into(),
+                ))
+            }
+        };
+
+        let end = posts.len() < self.cursor.limit as usize;
+        let chunk_stream = posts
             .into_iter()
             .map(move |item| get_post_uid(self.canisters, item.publisher_canister_id, item.post_id))
             .collect::<FuturesOrdered<_>>()

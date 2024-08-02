@@ -2,7 +2,7 @@ use candid::Principal;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    canister::individual_user_template::PostDetailsForFrontend, state::canisters::Canisters,
+    canister::individual_user_template::{PostDetailsForFrontend, PostStatus}, state::canisters::Canisters,
 };
 
 use super::profile::propic_from_principal;
@@ -106,6 +106,11 @@ pub async fn get_post_uid<const AUTH: bool>(
             return Ok(None);
         }
     };
+
+    // TODO: Add this filter
+    // if post_details.status == PostStatus::BannedDueToUserReporting {
+    //     return Ok(None);
+    // }
 
     let post_uuid = &post_details.video_uid;
     let req_url = format!(

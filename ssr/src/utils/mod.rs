@@ -4,11 +4,13 @@ use web_time::{Duration, SystemTime};
 pub mod event_streaming;
 pub mod ic;
 pub mod icon;
+pub mod ml_feed;
 pub mod posts;
 pub mod profile;
 pub mod report;
 pub mod route;
 pub mod timestamp;
+pub mod types;
 pub mod user;
 pub mod web;
 

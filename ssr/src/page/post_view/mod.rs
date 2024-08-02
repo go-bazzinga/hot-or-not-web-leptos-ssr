@@ -19,8 +19,7 @@ use crate::{
     state::canisters::{unauth_canisters, Canisters},
     try_or_redirect,
     utils::{
-        posts::{get_post_uid, FetchCursor, PostDetails},
-        route::failure_redirect,
+        ml_feed::MLFeed, posts::{get_post_uid, FetchCursor, PostDetails}, route::failure_redirect
     },
 };
 use video_iter::VideoFetchStream;
@@ -73,7 +72,7 @@ pub fn ScrollingView<NV: Fn() -> NVR + Clone + 'static, NVR>(
                 class="snap-mandatory snap-y overflow-y-scroll h-dvh w-dvw bg-black"
                 style:scroll-snap-points-y="repeat(100vh)"
             >
-                <HomeButtonOverlay/>
+                <HomeButtonOverlay />
                 <For
                     each=move || video_queue().into_iter().enumerate()
                     key=|(_, details)| (details.canister_id, details.post_id)
@@ -123,7 +122,7 @@ pub fn ScrollingView<NV: Fn() -> NVR + Clone + 'static, NVR>(
                             <div _ref=container_ref class="snap-always snap-end w-full h-full">
                                 <Show when=show_video>
                                     <BgView video_queue current_idx idx=queue_idx>
-                                        <VideoView video_queue current_idx idx=queue_idx muted/>
+                                        <VideoView video_queue current_idx idx=queue_idx muted />
                                     </BgView>
                                 </Show>
                             </div>
@@ -186,6 +185,7 @@ pub fn PostViewWithUpdates(initial_post: Option<PostDetails>) -> impl IntoView {
     }
     let (nsfw_enabled, _, _) = use_local_storage::<bool, FromToStringCodec>(NSFW_TOGGLE_STORE);
     let auth_canisters: RwSignal<Option<Canisters<true>>> = expect_context();
+    let ml_feed: RwSignal<MLFeed> = expect_context();
 
     let fetch_video_action = create_action(move |_| async move {
         loop {
@@ -195,12 +195,13 @@ pub fn PostViewWithUpdates(initial_post: Option<PostDetails>) -> impl IntoView {
             let auth_canisters = auth_canisters.get_untracked();
             let nsfw_enabled = nsfw_enabled.get_untracked();
             let unauth_canisters = unauth_canisters();
+            let ml_feed = ml_feed.get_untracked();
 
             let chunks = if let Some(canisters) = auth_canisters.as_ref() {
-                let fetch_stream = VideoFetchStream::new(canisters, cursor);
+                let fetch_stream = VideoFetchStream::new(canisters, &ml_feed, cursor);
                 fetch_stream.fetch_post_uids_chunked(3, nsfw_enabled).await
             } else {
-                let fetch_stream = VideoFetchStream::new(&unauth_canisters, cursor);
+                let fetch_stream = VideoFetchStream::new(&unauth_canisters, &ml_feed, cursor);
                 fetch_stream.fetch_post_uids_chunked(3, nsfw_enabled).await
             };
 
@@ -264,7 +265,7 @@ pub fn PostViewWithUpdates(initial_post: Option<PostDetails>) -> impl IntoView {
             recovering_state
             fetch_next_videos=next_videos
             queue_end
-            overlay=|| view! { <HomeButtonOverlay/> }
+            overlay=|| view! { <HomeButtonOverlay /> }
         />
     }
 }
@@ -321,7 +322,7 @@ pub fn PostView() -> impl IntoView {
                 fetch_first_video_uid()
                     .and_then(|initial_post| {
                         let initial_post = initial_post.ok()?;
-                        Some(view! { <PostViewWithUpdates initial_post/> })
+                        Some(view! { <PostViewWithUpdates initial_post /> })
                     })
             }}
 

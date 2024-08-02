@@ -16,7 +16,10 @@ leptos_meta = { version = "0.6", features = ["nightly"] }
 leptos_router = { version = "0.6", features = ["nightly"] }
 log = "0.4"
 simple_logger = "4.0"
-tokio = { version = "1", optional = true, features = ["rt-multi-thread", "signal"] }
+tokio = { version = "1", optional = true, features = [
+    "rt-multi-thread",
+    "signal",
+] }
 tower = { version = "0.4", optional = true }
 tower-http = { version = "0.5", features = ["fs"], optional = true }
 wasm-bindgen = "=0.2.92"
@@ -110,7 +113,8 @@ hydrate = [
     "dep:web-sys",
     "reqwest/native-tls",
     "dep:rand_chacha",
-    "dep:wasm-bindgen-futures"
+    "dep:wasm-bindgen-futures",
+    "tonic",
 ]
 ssr = [
     "dep:axum",
@@ -150,6 +154,7 @@ redis-kv = []
 cloudflare = ["dep:gob-cloudflare"]
 backend-admin = []
 ga4 = []
+local-feed = []
 mock-wallet-history = ["dep:rand_chacha"]
 release-bin = [
     "ssr",
@@ -175,13 +180,9 @@ local-bin = [
     "backend-admin",
     "dep:testcontainers",
     "dep:yral-testcontainers",
+    "local-feed",
 ]
-local-lib = [
-    "hydrate",
-    "redis-kv",
-    "local-auth",
-    "backend-admin",
-]
+local-lib = ["hydrate", "redis-kv", "local-auth", "backend-admin", "local-feed"]
 
 [package.metadata.leptos]
 # The name used by wasm-bindgen/cargo-leptos for the JS/WASM bundle. Defaults to the crate name
@@ -238,7 +239,7 @@ env = "DEV"
 # The features to use when compiling the bin target
 #
 # Optional. Can be over-ridden with the command line parameter --bin-features
-bin-features = ["ssr","local-auth"]
+bin-features = ["ssr", "local-auth"]
 
 # If the --no-default-features flag should be used when compiling the bin target
 #
