@@ -73,7 +73,7 @@ pub fn ScrollingView<NV: Fn() -> NVR + Clone + 'static, NVR>(
                 class="snap-mandatory snap-y overflow-y-scroll h-dvh w-dvw bg-black"
                 style:scroll-snap-points-y="repeat(100vh)"
             >
-                <HomeButtonOverlay/>
+                <HomeButtonOverlay />
                 <For
                     each=move || video_queue().into_iter().enumerate()
                     key=|(_, details)| (details.canister_id, details.post_id)
@@ -123,7 +123,7 @@ pub fn ScrollingView<NV: Fn() -> NVR + Clone + 'static, NVR>(
                             <div _ref=container_ref class="snap-always snap-end w-full h-full">
                                 <Show when=show_video>
                                     <BgView video_queue current_idx idx=queue_idx>
-                                        <VideoView video_queue current_idx idx=queue_idx muted/>
+                                        <VideoView video_queue current_idx idx=queue_idx muted />
                                     </BgView>
                                 </Show>
                             </div>
@@ -198,10 +198,10 @@ pub fn PostViewWithUpdates(initial_post: Option<PostDetails>) -> impl IntoView {
 
             let chunks = if let Some(canisters) = auth_canisters.as_ref() {
                 let fetch_stream = VideoFetchStream::new(canisters, cursor);
-                fetch_stream.fetch_post_uids_chunked(3, nsfw_enabled).await
+                fetch_stream.fetch_post_uids_ml_feed_chunked(3, nsfw_enabled).await
             } else {
                 let fetch_stream = VideoFetchStream::new(&unauth_canisters, cursor);
-                fetch_stream.fetch_post_uids_chunked(3, nsfw_enabled).await
+                fetch_stream.fetch_post_uids_ml_feed_chunked(3, nsfw_enabled).await
             };
 
             let res = try_or_redirect!(chunks);
@@ -264,7 +264,7 @@ pub fn PostViewWithUpdates(initial_post: Option<PostDetails>) -> impl IntoView {
             recovering_state
             fetch_next_videos=next_videos
             queue_end
-            overlay=|| view! { <HomeButtonOverlay/> }
+            overlay=|| view! { <HomeButtonOverlay /> }
         />
     }
 }
@@ -321,7 +321,7 @@ pub fn PostView() -> impl IntoView {
                 fetch_first_video_uid()
                     .and_then(|initial_post| {
                         let initial_post = initial_post.ok()?;
-                        Some(view! { <PostViewWithUpdates initial_post/> })
+                        Some(view! { <PostViewWithUpdates initial_post /> })
                     })
             }}
 

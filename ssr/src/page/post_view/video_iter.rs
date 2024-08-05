@@ -84,4 +84,42 @@ impl<'a, const AUTH: bool> VideoFetchStream<'a, AUTH> {
             end,
         })
     }
+
+
+    pub async fn fetch_post_uids_ml_feed_chunked(
+        self,
+        chunks: usize,
+        allow_nsfw: bool,
+    ) -> Result<FetchVideosRes<'a>, PostViewError> {
+
+        use crate::utils::local_feed_impl::get_next_feed;
+
+        let top_posts_fut = get_next_feed();
+    
+        let top_posts = match top_posts_fut.await {
+            Ok(top_posts) => top_posts,
+            Err(e) => {
+                leptos::logging::log!("error fetching posts: {:?}", e);
+                return Ok(FetchVideosRes {
+                    posts_stream: Box::pin(futures::stream::empty()),
+                    end: true,
+                })
+            }
+        };
+        // leptos::logging::log!("after first ret : top_posts : {:?}", top_posts);
+
+        let end = false;
+        let chunk_stream = top_posts
+            .into_iter()
+            .map(move |item| get_post_uid(self.canisters, item.0, item.1))
+            .collect::<FuturesOrdered<_>>()
+            .filter_map(|res| async { res.transpose() })
+            .chunks(chunks);
+
+        Ok(FetchVideosRes {
+            posts_stream: Box::pin(chunk_stream),
+            end,
+        })
+
+    }
 }
