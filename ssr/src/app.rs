@@ -16,10 +16,7 @@ use crate::{
         wallet::{transactions::Transactions, Wallet},
     },
     state::{canisters::Canisters, content_seed_client::ContentSeedClient, history::HistoryCtx},
-    utils::{
-        event_streaming::EventHistory,
-        ml_feed::{self, MLFeed},
-    },
+    utils::event_streaming::EventHistory,
 };
 use leptos::*;
 use leptos_meta::*;
@@ -70,9 +67,11 @@ pub fn App() -> impl IntoView {
     provide_context(ProfilePostsContext::default());
     provide_context(AuthorizedUserToSeedContent::default());
 
-    // ML Feed
-    let ml_feed = create_rw_signal(MLFeed::default());
-    provide_context(ml_feed);
+    #[cfg(feature = "hydrate")]
+    {
+        use crate::utils::ml_feed::MLFeed;
+        provide_context(MLFeed::default());
+    }
 
     // History Tracking
     let history_ctx = HistoryCtx::default();

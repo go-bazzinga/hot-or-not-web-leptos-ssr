@@ -15,6 +15,9 @@ pub mod state;
 pub mod utils;
 
 #[cfg(feature = "hydrate")]
+extern crate tonic_2 as tonic;
+
+#[cfg(feature = "hydrate")]
 #[wasm_bindgen::prelude::wasm_bindgen]
 pub fn hydrate() {
     use crate::app::App;

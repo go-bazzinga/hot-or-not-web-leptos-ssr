@@ -6,7 +6,7 @@ use futures::{stream::FuturesOrdered, Stream, StreamExt};
 use crate::{
     canister::post_cache::{self, NsfwFilter},
     state::canisters::Canisters,
-    utils::{ml_feed::{MLFeed}, posts::{get_post_uid, FetchCursor, PostDetails, PostViewError}},
+    utils::{posts::{get_post_uid, FetchCursor, PostDetails, PostViewError}},
 };
 
 pub async fn post_liked_by_me(
@@ -30,13 +30,12 @@ pub struct FetchVideosRes<'a> {
 
 pub struct VideoFetchStream<'a, const AUTH: bool> {
     canisters: &'a Canisters<AUTH>,
-    ml_feed: &'a MLFeed,
     cursor: FetchCursor,
 }
 
 impl<'a, const AUTH: bool> VideoFetchStream<'a, AUTH> {
-    pub fn new(canisters: &'a Canisters<AUTH>, ml_feed: &'a MLFeed, cursor: FetchCursor) -> Self {
-        Self { canisters, ml_feed, cursor }
+    pub fn new(canisters: &'a Canisters<AUTH>, cursor: FetchCursor) -> Self {
+        Self { canisters, cursor }
     }
 
     pub async fn fetch_post_uids_chunked(
@@ -86,50 +85,88 @@ impl<'a, const AUTH: bool> VideoFetchStream<'a, AUTH> {
         })
     }
 
-    pub async fn fetch_post_uids_chunked_mlfeed(
+    pub async fn fetch_post_uids_ml_feed_chunked(
         self,
         chunks: usize,
         allow_nsfw: bool,
     ) -> Result<FetchVideosRes<'a>, PostViewError> {
 
-        let mut posts_fut;
+        // #[cfg(feature = "hydrate")]
+        // {
+        //     leptos::logging::log!("in hydrate");
 
-        #[cfg(not(feature = "local-feed"))]
-        {
-            use crate::utils::ml_feed::ml_feed_impl;
+        //     use crate::utils::ml_feed::ml_feed_impl::get_next_feed;
 
-            posts_fut = ml_feed_impl::get_next_feed();
-        }
+        //     let user_canister_principal = self.canisters.user_canister();
 
-        #[cfg(feature = "local-feed")]
-        {
-            use crate::utils::ml_feed::local_feed_impl;
+        //     let top_posts_fut = get_next_feed(&user_canister_principal, self.cursor.limit as u32, vec![]);
+        
+        //     let top_posts = match top_posts_fut.await {
+        //         Ok(top_posts) => top_posts,
+        //         Err(e) => {
+        //             leptos::logging::log!("error fetching posts: {:?}", e);
+        //             return Ok(FetchVideosRes {
+        //                 posts_stream: Box::pin(futures::stream::empty()),
+        //                 end: true,
+        //             })
+        //         }
+        //     };
+        //     leptos::logging::log!("in hydrate - after first ret : top_posts : {:?}", top_posts);
+    
+        //     let end = top_posts.len() < self.cursor.limit as usize;
+        //     let chunk_stream = top_posts
+        //         .into_iter()
+        //         .map(move |item| get_post_uid(self.canisters, item.0, item.1))
+        //         .collect::<FuturesOrdered<_>>()
+        //         .filter_map(|res| async { res.transpose() })
+        //         .chunks(chunks);
+    
+        //     Ok(FetchVideosRes {
+        //         posts_stream: Box::pin(chunk_stream),
+        //         end,
+        //     })
+        // }
 
-            posts_fut = local_feed_impl::get_next_feed();
-        }
+        // // Empty res
+        // #[cfg(not(feature = "hydrate"))]
+        // {
+        //     leptos::logging::log!("not hydrate");
+            use crate::utils::local_feed_impl::get_next_feed;
 
+            let user_canister_principal = self.canisters.user_canister();
 
-        let posts = match posts_fut.await? {
-            Ok(posts) => posts,
-            Err(_) => {
-                // TODO: change this error type
-                return Err(PostViewError::Canister(
-                    "Feed server error".into(),
-                ))
-            }
-        };
+            let top_posts_fut = get_next_feed();
+        
+            let top_posts = match top_posts_fut.await {
+                Ok(top_posts) => top_posts,
+                Err(e) => {
+                    leptos::logging::log!("error fetching posts: {:?}", e);
+                    return Ok(FetchVideosRes {
+                        posts_stream: Box::pin(futures::stream::empty()),
+                        end: true,
+                    })
+                }
+            };
+            leptos::logging::log!("after first ret : top_posts : {:?}", top_posts);
+    
+            let end = false;
+            let chunk_stream = top_posts
+                .into_iter()
+                .map(move |item| get_post_uid(self.canisters, item.0, item.1))
+                .collect::<FuturesOrdered<_>>()
+                .filter_map(|res| async { res.transpose() })
+                .chunks(chunks);
+    
+            Ok(FetchVideosRes {
+                posts_stream: Box::pin(chunk_stream),
+                end,
+            })
 
-        let end = posts.len() < self.cursor.limit as usize;
-        let chunk_stream = posts
-            .into_iter()
-            .map(move |item| get_post_uid(self.canisters, item.publisher_canister_id, item.post_id))
-            .collect::<FuturesOrdered<_>>()
-            .filter_map(|res| async { res.transpose() })
-            .chunks(chunks);
-
-        Ok(FetchVideosRes {
-            posts_stream: Box::pin(chunk_stream),
-            end,
-        })
+        //     Ok(FetchVideosRes {
+        //         posts_stream: Box::pin(futures::stream::empty()),
+        //         end: true,
+        //     })
+        // }
     }
 }
+

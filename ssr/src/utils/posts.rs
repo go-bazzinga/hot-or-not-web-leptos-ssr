@@ -102,12 +102,12 @@ pub async fn get_post_uid<const AUTH: bool>(
     {
         Ok(p) => p,
         Err(e) => {
-            log::warn!("failed to get post details: {}, skipping", e);
+            log::warn!("failed to get post details for {} {}: {}, skipping", user_canister.to_string(), post_id, e);
             return Ok(None);
         }
     };
 
-    // TODO: Add this filter
+    // TODO: Add this filter in new method
     // if post_details.status == PostStatus::BannedDueToUserReporting {
     //     return Ok(None);
     // }

@@ -19,7 +19,7 @@ use crate::{
     state::canisters::{unauth_canisters, Canisters},
     try_or_redirect,
     utils::{
-        ml_feed::MLFeed, posts::{get_post_uid, FetchCursor, PostDetails}, route::failure_redirect
+        posts::{get_post_uid, FetchCursor, PostDetails}, route::failure_redirect
     },
 };
 use video_iter::VideoFetchStream;
@@ -185,9 +185,22 @@ pub fn PostViewWithUpdates(initial_post: Option<PostDetails>) -> impl IntoView {
     }
     let (nsfw_enabled, _, _) = use_local_storage::<bool, FromToStringCodec>(NSFW_TOGGLE_STORE);
     let auth_canisters: RwSignal<Option<Canisters<true>>> = expect_context();
-    let ml_feed: RwSignal<MLFeed> = expect_context();
+    // let ml_feed: MLFeed = expect_context();
 
-    let fetch_video_action = create_action(move |_| async move {
+    // #[cfg(feature = "hydrate")]
+    // {
+    //     use crate::utils::ml_feed::ml_feed_impl::get_next_feed;
+        
+    //     leptos::spawn_local(async move {
+            
+    //         let temp_res = get_next_feed(&Principal::from_text("76qol-iiaaa-aaaak-qelkq-cai").unwrap(), 10, vec![]).await;
+        
+    //         logging::log!("temp_res: {:?}", temp_res);
+    //     });
+
+    // }
+
+    let fetch_video_action = create_action(move |_|{ async move {
         loop {
             let Some(cursor) = fetch_cursor.try_get_untracked() else {
                 return;
@@ -195,14 +208,16 @@ pub fn PostViewWithUpdates(initial_post: Option<PostDetails>) -> impl IntoView {
             let auth_canisters = auth_canisters.get_untracked();
             let nsfw_enabled = nsfw_enabled.get_untracked();
             let unauth_canisters = unauth_canisters();
-            let ml_feed = ml_feed.get_untracked();
 
             let chunks = if let Some(canisters) = auth_canisters.as_ref() {
-                let fetch_stream = VideoFetchStream::new(canisters, &ml_feed, cursor);
-                fetch_stream.fetch_post_uids_chunked(3, nsfw_enabled).await
+                leptos::logging::log!("auth_canisters: yo");
+                let fetch_stream = VideoFetchStream::new(canisters, cursor);
+                fetch_stream.fetch_post_uids_ml_feed_chunked(3, nsfw_enabled).await   // fetch_post_uids_ml_feed_chunked
             } else {
-                let fetch_stream = VideoFetchStream::new(&unauth_canisters, &ml_feed, cursor);
-                fetch_stream.fetch_post_uids_chunked(3, nsfw_enabled).await
+                leptos::logging::log!("unauth_canisters: yo");
+                // return;
+                let fetch_stream = VideoFetchStream::new(&unauth_canisters, cursor);
+                fetch_stream.fetch_post_uids_ml_feed_chunked(3, nsfw_enabled).await   // fetch_post_uids_chunked
             };
 
             let res = try_or_redirect!(chunks);
@@ -214,18 +229,21 @@ pub fn PostViewWithUpdates(initial_post: Option<PostDetails>) -> impl IntoView {
                     for uid in chunk {
                         let uid = try_or_redirect!(uid);
                         q.push(uid);
+
+                        leptos::logging::log!("queue len: {:?}, cur_idc: {:?}", q.len(), current_idx.get_untracked());
                     }
                 });
             }
             if res.end || cnt >= 8 {
                 queue_end.try_set(res.end);
+                leptos::logging::log!("breaking: queue_end {:?}", queue_end.get_untracked());
                 break;
             }
             fetch_cursor.try_update(|c| c.advance());
         }
 
         fetch_cursor.try_update(|c| c.advance());
-    });
+    }});
     create_effect(move |_| {
         if !recovering_state.get_untracked() {
             fetch_video_action.dispatch(());

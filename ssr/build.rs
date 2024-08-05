@@ -130,7 +130,7 @@ mod build_common {
         let ml_feed_proto = "contracts/projects/ml_feed/ml_feed.proto";
         let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
 
-        tonic_build::configure()
+        tonic_build_2::configure()
             .build_client(true)
             .build_server(false)
             .out_dir(out_dir)
@@ -140,7 +140,9 @@ mod build_common {
 
     pub fn build_common() -> Result<()> {
         build_did_intf()?;
+
         build_gprc_client()?;
+
         Ok(())
     }
 }
