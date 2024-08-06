@@ -30,7 +30,8 @@ pub fn ScrollingPostView<F: Fn() -> V + Clone + 'static, V, O: Fn() -> IV, IV: I
 
                 <For
                     each=move || video_queue().into_iter().enumerate()
-                    key=move |(_, details)| (details.canister_id, details.post_id)
+                    // TODO: change it back
+                    key=move |(qidx, details)| (qidx.clone(), details.canister_id, details.post_id)
                     children=move |(queue_idx, _details)| {
                         let container_ref = create_node_ref::<html::Div>();
                         let next_videos = fetch_next_videos.clone();
@@ -74,7 +75,7 @@ pub fn ScrollingPostView<F: Fn() -> V + Clone + 'static, V, O: Fn() -> IV, IV: I
                             <div _ref=container_ref class="snap-always snap-end w-full h-full">
                                 <Show when=show_video>
                                     <BgView video_queue current_idx idx=queue_idx>
-                                        <VideoView video_queue current_idx idx=queue_idx muted/>
+                                        <VideoView video_queue current_idx idx=queue_idx muted />
                                     </BgView>
                                 </Show>
                             </div>

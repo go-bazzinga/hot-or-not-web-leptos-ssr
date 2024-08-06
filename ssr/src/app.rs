@@ -69,7 +69,7 @@ pub fn App() -> impl IntoView {
 
     #[cfg(feature = "hydrate")]
     {
-        use crate::utils::ml_feed::MLFeed;
+        use crate::utils::ml_feed::ml_feed_grpcweb::MLFeed;
         provide_context(MLFeed::default());
     }
 

@@ -89,53 +89,18 @@ impl<'a, const AUTH: bool> VideoFetchStream<'a, AUTH> {
         self,
         chunks: usize,
         allow_nsfw: bool,
+        video_queue: Vec<PostDetails>,
     ) -> Result<FetchVideosRes<'a>, PostViewError> {
 
-        // #[cfg(feature = "hydrate")]
-        // {
-        //     leptos::logging::log!("in hydrate");
-
-        //     use crate::utils::ml_feed::ml_feed_impl::get_next_feed;
-
-        //     let user_canister_principal = self.canisters.user_canister();
-
-        //     let top_posts_fut = get_next_feed(&user_canister_principal, self.cursor.limit as u32, vec![]);
-        
-        //     let top_posts = match top_posts_fut.await {
-        //         Ok(top_posts) => top_posts,
-        //         Err(e) => {
-        //             leptos::logging::log!("error fetching posts: {:?}", e);
-        //             return Ok(FetchVideosRes {
-        //                 posts_stream: Box::pin(futures::stream::empty()),
-        //                 end: true,
-        //             })
-        //         }
-        //     };
-        //     leptos::logging::log!("in hydrate - after first ret : top_posts : {:?}", top_posts);
-    
-        //     let end = top_posts.len() < self.cursor.limit as usize;
-        //     let chunk_stream = top_posts
-        //         .into_iter()
-        //         .map(move |item| get_post_uid(self.canisters, item.0, item.1))
-        //         .collect::<FuturesOrdered<_>>()
-        //         .filter_map(|res| async { res.transpose() })
-        //         .chunks(chunks);
-    
-        //     Ok(FetchVideosRes {
-        //         posts_stream: Box::pin(chunk_stream),
-        //         end,
-        //     })
-        // }
-
-        // // Empty res
-        // #[cfg(not(feature = "hydrate"))]
-        // {
-        //     leptos::logging::log!("not hydrate");
-            use crate::utils::local_feed_impl::get_next_feed;
+        #[cfg(feature = "hydrate")]
+        {
+            use crate::utils::ml_feed::ml_feed_grpcweb::MLFeed;
+            use leptos::expect_context;
 
             let user_canister_principal = self.canisters.user_canister();
+            let mut ml_feed: MLFeed = expect_context();
 
-            let top_posts_fut = get_next_feed();
+            let top_posts_fut = ml_feed.get_next_feed(&user_canister_principal, self.cursor.limit as u32, video_queue);
         
             let top_posts = match top_posts_fut.await {
                 Ok(top_posts) => top_posts,
@@ -147,9 +112,8 @@ impl<'a, const AUTH: bool> VideoFetchStream<'a, AUTH> {
                     })
                 }
             };
-            leptos::logging::log!("after first ret : top_posts : {:?}", top_posts);
     
-            let end = false;
+            let end = top_posts.len() < self.cursor.limit as usize;
             let chunk_stream = top_posts
                 .into_iter()
                 .map(move |item| get_post_uid(self.canisters, item.0, item.1))
@@ -157,16 +121,17 @@ impl<'a, const AUTH: bool> VideoFetchStream<'a, AUTH> {
                 .filter_map(|res| async { res.transpose() })
                 .chunks(chunks);
     
-            Ok(FetchVideosRes {
+            return Ok(FetchVideosRes {
                 posts_stream: Box::pin(chunk_stream),
                 end,
-            })
+            });
+        }
 
-        //     Ok(FetchVideosRes {
-        //         posts_stream: Box::pin(futures::stream::empty()),
-        //         end: true,
-        //     })
-        // }
+        Ok(FetchVideosRes {
+            posts_stream: Box::pin(futures::stream::empty()),
+            end: true,
+        })
+        
     }
 }
 

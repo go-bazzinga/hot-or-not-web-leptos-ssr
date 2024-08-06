@@ -185,11 +185,11 @@ pub fn PostViewWithUpdates(initial_post: Option<PostDetails>) -> impl IntoView {
     }
     let (nsfw_enabled, _, _) = use_local_storage::<bool, FromToStringCodec>(NSFW_TOGGLE_STORE);
     let auth_canisters: RwSignal<Option<Canisters<true>>> = expect_context();
-    // let ml_feed: MLFeed = expect_context();
+
 
     // #[cfg(feature = "hydrate")]
     // {
-    //     use crate::utils::ml_feed::ml_feed_impl::get_next_feed;
+    //     use crate::utils::ml_feed::ml_feed_grpcweb::get_next_feed;
         
     //     leptos::spawn_local(async move {
             
@@ -210,14 +210,11 @@ pub fn PostViewWithUpdates(initial_post: Option<PostDetails>) -> impl IntoView {
             let unauth_canisters = unauth_canisters();
 
             let chunks = if let Some(canisters) = auth_canisters.as_ref() {
-                leptos::logging::log!("auth_canisters: yo");
                 let fetch_stream = VideoFetchStream::new(canisters, cursor);
-                fetch_stream.fetch_post_uids_ml_feed_chunked(3, nsfw_enabled).await   // fetch_post_uids_ml_feed_chunked
+                fetch_stream.fetch_post_uids_ml_feed_chunked(3, nsfw_enabled, video_queue.get_untracked()).await   // fetch_post_uids_ml_feed_chunked
             } else {
-                leptos::logging::log!("unauth_canisters: yo");
-                // return;
                 let fetch_stream = VideoFetchStream::new(&unauth_canisters, cursor);
-                fetch_stream.fetch_post_uids_ml_feed_chunked(3, nsfw_enabled).await   // fetch_post_uids_chunked
+                fetch_stream.fetch_post_uids_ml_feed_chunked(3, nsfw_enabled, video_queue.get_untracked()).await   // fetch_post_uids_chunked
             };
 
             let res = try_or_redirect!(chunks);
@@ -229,14 +226,11 @@ pub fn PostViewWithUpdates(initial_post: Option<PostDetails>) -> impl IntoView {
                     for uid in chunk {
                         let uid = try_or_redirect!(uid);
                         q.push(uid);
-
-                        leptos::logging::log!("queue len: {:?}, cur_idc: {:?}", q.len(), current_idx.get_untracked());
                     }
                 });
             }
             if res.end || cnt >= 8 {
                 queue_end.try_set(res.end);
-                leptos::logging::log!("breaking: queue_end {:?}", queue_end.get_untracked());
                 break;
             }
             fetch_cursor.try_update(|c| c.advance());

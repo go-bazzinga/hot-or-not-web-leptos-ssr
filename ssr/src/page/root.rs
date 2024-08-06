@@ -35,9 +35,35 @@ async fn get_top_post_id() -> Result<Option<(Principal, u64)>, ServerFnError> {
     Ok(Some((top_item.publisher_canister_id, top_item.post_id)))
 }
 
+
+#[server]
+async fn get_top_post_id_mlfeed() -> Result<Option<(Principal, u64)>, ServerFnError> {
+    use crate::utils::ml_feed::ml_feed_grpc::get_start_feed;
+
+    let canisters = unauth_canisters();
+    let user_canister_principal = canisters.user_canister();
+    let top_posts_fut = get_start_feed(&user_canister_principal, 1, vec![]);
+
+    let top_items = match top_posts_fut.await
+    {
+        Ok(top_posts) => top_posts,
+        Err(e) => {
+            return Err(ServerFnError::ServerError(
+                "failed to fetch top post ml feed".to_string(),
+            ));
+        }
+    };
+    let Some(top_item) = top_items.first() else {
+        return Ok(None);
+    };
+
+    Ok(Some((top_item.0, top_item.1)))
+}
+
+
 #[component]
 pub fn RootPage() -> impl IntoView {
-    let target_post = create_resource(|| (), |_| get_top_post_id());
+    let target_post = create_resource(|| (), |_| get_top_post_id_mlfeed());
 
     view! {
         <Suspense fallback=FullScreenSpinner>
@@ -52,7 +78,7 @@ pub fn RootPage() -> impl IntoView {
                             Ok(None) => "/error?err=No Posts Found".to_string(),
                             Err(e) => format!("/error?err={e}"),
                         };
-                        view! { <Redirect path=url/> }
+                        view! { <Redirect path=url /> }
                     })
             }}
 
