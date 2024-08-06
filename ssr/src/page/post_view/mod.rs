@@ -73,7 +73,7 @@ pub fn ScrollingView<NV: Fn() -> NVR + Clone + 'static, NVR>(
                 class="snap-mandatory snap-y overflow-y-scroll h-dvh w-dvw bg-black"
                 style:scroll-snap-points-y="repeat(100vh)"
             >
-                <HomeButtonOverlay/>
+                // <HomeButtonOverlay/>
                 <For
                     each=move || video_queue().into_iter().enumerate()
                     key=|(_, details)| (details.canister_id, details.post_id)
