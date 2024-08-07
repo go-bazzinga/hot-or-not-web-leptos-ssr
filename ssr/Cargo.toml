@@ -86,11 +86,11 @@ gob-cloudflare = { git = "https://github.com/go-bazzinga/gob-cloudflare", rev = 
 yral-metadata-client = { git = "https://github.com/go-bazzinga/yral-metadata", rev = "c394bf9af3f32d81c1ac50b966c25dafafa2545b", default-features = false }
 yral-metadata-types = { git = "https://github.com/go-bazzinga/yral-metadata", rev = "c394bf9af3f32d81c1ac50b966c25dafafa2545b", default-features = false }
 gloo-utils = { version = "0.2.0", features = ["serde"] }
-tonic = { version = "0.12.0", features = [
+tonic = { version = "0.11.0", features = [
     "tls",
     "tls-webpki-roots",
 ], optional = true }
-prost = { version = "0.13.1", optional = true }
+prost = { version = "0.12.4", optional = true }
 hmac = { version = "0.12.1", optional = true }
 wasm-bindgen-futures = { version = "0.4.42", optional = true }
 testcontainers = { version = "0.20.0", optional = true }
@@ -104,6 +104,12 @@ optional = true
 default-features = false
 features = ["prost", "codegen"]
 
+
+[dependencies.prost_2]
+package = "prost"
+version = "0.13.0"
+optional = true
+
 [build-dependencies]
 serde = { version = "1.0", features = ["derive"] }
 candid_parser = "0.1.1"
@@ -114,7 +120,7 @@ anyhow = "1.0.86"
 
 [build-dependencies.tonic_build_2]
 package = "tonic-build"
-version = "0.12.1"
+version = "=0.12.0"
 default-features = false
 features = ["prost"]
 
@@ -129,7 +135,7 @@ hydrate = [
     "dep:rand_chacha",
     "dep:wasm-bindgen-futures",
     "tonic_2",
-    "prost",
+    "prost_2",
 ]
 ssr = [
     "dep:axum",

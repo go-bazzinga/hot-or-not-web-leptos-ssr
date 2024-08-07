@@ -30,7 +30,7 @@ impl Default for FetchCursor {
     fn default() -> Self {
         Self {
             start: 0,
-            limit: 10,
+            limit: 25,
         }
     }
 }

@@ -170,7 +170,6 @@ pub fn PostViewWithUpdates(initial_post: Option<PostDetails>) -> impl IntoView {
                 return;
             }
             f.start = 1;
-            f.limit = 1;
         });
         video_queue.update_untracked(|v| {
             if v.len() > 1 {
@@ -185,20 +184,6 @@ pub fn PostViewWithUpdates(initial_post: Option<PostDetails>) -> impl IntoView {
     }
     let (nsfw_enabled, _, _) = use_local_storage::<bool, FromToStringCodec>(NSFW_TOGGLE_STORE);
     let auth_canisters: RwSignal<Option<Canisters<true>>> = expect_context();
-
-
-    // #[cfg(feature = "hydrate")]
-    // {
-    //     use crate::utils::ml_feed::ml_feed_grpcweb::get_next_feed;
-        
-    //     leptos::spawn_local(async move {
-            
-    //         let temp_res = get_next_feed(&Principal::from_text("76qol-iiaaa-aaaak-qelkq-cai").unwrap(), 10, vec![]).await;
-        
-    //         logging::log!("temp_res: {:?}", temp_res);
-    //     });
-
-    // }
 
     let fetch_video_action = create_action(move |_|{ async move {
         loop {
@@ -233,10 +218,7 @@ pub fn PostViewWithUpdates(initial_post: Option<PostDetails>) -> impl IntoView {
                 queue_end.try_set(res.end);
                 break;
             }
-            fetch_cursor.try_update(|c| c.advance());
         }
-
-        fetch_cursor.try_update(|c| c.advance());
     }});
     create_effect(move |_| {
         if !recovering_state.get_untracked() {

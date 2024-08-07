@@ -15,6 +15,8 @@ pub mod state;
 pub mod utils;
 
 #[cfg(feature = "hydrate")]
+extern crate prost_2 as prost;
+#[cfg(feature = "hydrate")]
 extern crate tonic_2 as tonic;
 
 #[cfg(feature = "hydrate")]

@@ -35,7 +35,6 @@ async fn get_top_post_id() -> Result<Option<(Principal, u64)>, ServerFnError> {
     Ok(Some((top_item.publisher_canister_id, top_item.post_id)))
 }
 
-
 #[server]
 async fn get_top_post_id_mlfeed() -> Result<Option<(Principal, u64)>, ServerFnError> {
     use crate::utils::ml_feed::ml_feed_grpc::get_start_feed;
@@ -44,10 +43,10 @@ async fn get_top_post_id_mlfeed() -> Result<Option<(Principal, u64)>, ServerFnEr
     let user_canister_principal = canisters.user_canister();
     let top_posts_fut = get_start_feed(&user_canister_principal, 1, vec![]);
 
-    let top_items = match top_posts_fut.await
-    {
+    let top_items = match top_posts_fut.await {
         Ok(top_posts) => top_posts,
         Err(e) => {
+            log::error!("failed to fetch top post ml feed: {:?}", e);
             return Err(ServerFnError::ServerError(
                 "failed to fetch top post ml feed".to_string(),
             ));
@@ -59,7 +58,6 @@ async fn get_top_post_id_mlfeed() -> Result<Option<(Principal, u64)>, ServerFnEr
 
     Ok(Some((top_item.0, top_item.1)))
 }
-
 
 #[component]
 pub fn RootPage() -> impl IntoView {
