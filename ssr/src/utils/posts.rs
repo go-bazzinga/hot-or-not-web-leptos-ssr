@@ -2,7 +2,7 @@ use candid::Principal;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    canister::individual_user_template::{PostDetailsForFrontend, PostStatus}, state::canisters::Canisters,
+    canister::individual_user_template::PostDetailsForFrontend, state::canisters::Canisters,
 };
 
 use super::profile::propic_from_principal;
@@ -102,7 +102,12 @@ pub async fn get_post_uid<const AUTH: bool>(
     {
         Ok(p) => p,
         Err(e) => {
-            log::warn!("failed to get post details for {} {}: {}, skipping", user_canister.to_string(), post_id, e);
+            log::warn!(
+                "failed to get post details for {} {}: {}, skipping",
+                user_canister.to_string(),
+                post_id,
+                e
+            );
             return Ok(None);
         }
     };

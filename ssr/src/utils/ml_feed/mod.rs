@@ -1,10 +1,7 @@
 use crate::consts::ML_FEED_GRPC_URL;
 use candid::Principal;
-use leptos::RwSignal;
 
 use super::types::PostId;
-
-use leptos::*;
 
 #[cfg(feature = "hydrate")]
 pub mod ml_feed_grpcweb {

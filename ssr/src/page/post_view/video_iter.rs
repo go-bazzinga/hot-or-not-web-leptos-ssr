@@ -6,7 +6,7 @@ use futures::{stream::FuturesOrdered, Stream, StreamExt};
 use crate::{
     canister::post_cache::{self, NsfwFilter},
     state::canisters::Canisters,
-    utils::{posts::{get_post_uid, FetchCursor, PostDetails, PostViewError}},
+    utils::posts::{get_post_uid, FetchCursor, PostDetails, PostViewError},
 };
 
 pub async fn post_liked_by_me(
@@ -88,20 +88,23 @@ impl<'a, const AUTH: bool> VideoFetchStream<'a, AUTH> {
     pub async fn fetch_post_uids_ml_feed_chunked(
         self,
         chunks: usize,
-        allow_nsfw: bool,
+        _allow_nsfw: bool,
         video_queue: Vec<PostDetails>,
     ) -> Result<FetchVideosRes<'a>, PostViewError> {
-
         #[cfg(feature = "hydrate")]
         {
             use crate::utils::ml_feed::ml_feed_grpcweb::MLFeed;
             use leptos::expect_context;
 
             let user_canister_principal = self.canisters.user_canister();
-            let mut ml_feed: MLFeed = expect_context();
+            let ml_feed: MLFeed = expect_context();
 
-            let top_posts_fut = ml_feed.get_next_feed(&user_canister_principal, self.cursor.limit as u32, video_queue);
-        
+            let top_posts_fut = ml_feed.get_next_feed(
+                &user_canister_principal,
+                self.cursor.limit as u32,
+                video_queue,
+            );
+
             let top_posts = match top_posts_fut.await {
                 Ok(top_posts) => top_posts,
                 Err(e) => {
@@ -109,10 +112,10 @@ impl<'a, const AUTH: bool> VideoFetchStream<'a, AUTH> {
                     return Ok(FetchVideosRes {
                         posts_stream: Box::pin(futures::stream::empty()),
                         end: true,
-                    })
+                    });
                 }
             };
-    
+
             let end = top_posts.len() < self.cursor.limit as usize;
             let chunk_stream = top_posts
                 .into_iter()
@@ -120,18 +123,19 @@ impl<'a, const AUTH: bool> VideoFetchStream<'a, AUTH> {
                 .collect::<FuturesOrdered<_>>()
                 .filter_map(|res| async { res.transpose() })
                 .chunks(chunks);
-    
+
             return Ok(FetchVideosRes {
                 posts_stream: Box::pin(chunk_stream),
                 end,
             });
         }
 
-        Ok(FetchVideosRes {
-            posts_stream: Box::pin(futures::stream::empty()),
-            end: true,
-        })
-        
+        #[cfg(not(feature = "hydrate"))]
+        {
+            return Ok(FetchVideosRes {
+                posts_stream: Box::pin(futures::stream::empty()),
+                end: true,
+            });
+        }
     }
 }
-

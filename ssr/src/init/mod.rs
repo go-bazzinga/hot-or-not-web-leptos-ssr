@@ -66,8 +66,6 @@ async fn init_grpc_offchain_channel() -> tonic::transport::Channel {
         .expect("Couldn't connect to off-chain agent")
 }
 
-
-
 #[cfg(feature = "backend-admin")]
 fn init_admin_canisters() -> crate::state::admin_canisters::AdminCanisters {
     use crate::state::admin_canisters::AdminCanisters;
