@@ -76,21 +76,24 @@ pub mod ml_feed_grpcweb {
 #[cfg(feature = "ssr")]
 pub mod ml_feed_grpc {
     use super::*;
-    use crate::utils::ml_feed::ml_feed_grpc::ml_feed_proto::{
-        ml_feed_client::MlFeedClient, FeedRequest, PostItem,
-    };
     use crate::utils::posts::PostDetails;
-    use tonic::transport::Channel;
 
+    #[cfg(not(clippy))]
     pub mod ml_feed_proto {
         tonic::include_proto!("ml_feed");
     }
 
+    #[cfg(not(clippy))]
     pub async fn get_start_feed(
         canister_id: &Principal,
         limit: u32,
         filter_list: Vec<PostDetails>,
     ) -> Result<Vec<PostId>, tonic::Status> {
+        use crate::utils::ml_feed::ml_feed_grpc::ml_feed_proto::{
+            ml_feed_client::MlFeedClient, FeedRequest, PostItem,
+        };
+        use tonic::transport::Channel;
+
         let channel = Channel::from_static("https://yral-ml-feed-server-staging.fly.dev:443")
             .connect()
             .await
@@ -131,6 +134,16 @@ pub mod ml_feed_grpc {
                 )
             })
             .collect())
+    }
+
+    // empty function
+    #[cfg(clippy)]
+    pub async fn get_start_feed(
+        _canister_id: &Principal,
+        _limit: u32,
+        _filter_list: Vec<PostDetails>,
+    ) -> Result<Vec<PostId>, tonic::Status> {
+        Ok(vec![])
     }
 }
 

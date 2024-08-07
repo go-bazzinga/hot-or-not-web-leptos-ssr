@@ -124,10 +124,10 @@ impl<'a, const AUTH: bool> VideoFetchStream<'a, AUTH> {
                 .filter_map(|res| async { res.transpose() })
                 .chunks(chunks);
 
-            return Ok(FetchVideosRes {
+            Ok(FetchVideosRes {
                 posts_stream: Box::pin(chunk_stream),
                 end,
-            });
+            })
         }
 
         #[cfg(not(feature = "hydrate"))]
