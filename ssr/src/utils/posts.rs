@@ -2,10 +2,11 @@ use candid::Principal;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    canister::individual_user_template::PostDetailsForFrontend, state::canisters::Canisters,
+    canister::individual_user_template::{PostDetailsForFrontend, PostStatus as PostStatusCandid},
+    state::canisters::Canisters,
 };
 
-use super::profile::propic_from_principal;
+use super::{profile::propic_from_principal, types::PostStatus};
 
 use ic_agent::AgentError;
 use thiserror::Error;
@@ -18,6 +19,8 @@ pub enum PostViewError {
     Canister(String),
     #[error("http fetch error {0}")]
     HttpFetch(#[from] reqwest::Error),
+    #[error("ml feed error {0}")]
+    MLFeedError(String),
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -30,7 +33,7 @@ impl Default for FetchCursor {
     fn default() -> Self {
         Self {
             start: 0,
-            limit: 25,
+            limit: 15,
         }
     }
 }
@@ -38,7 +41,7 @@ impl Default for FetchCursor {
 impl FetchCursor {
     pub fn advance(&mut self) {
         self.start += self.limit;
-        self.limit = 25;
+        self.limit = 30;
     }
 }
 
@@ -112,10 +115,10 @@ pub async fn get_post_uid<const AUTH: bool>(
         }
     };
 
-    // TODO: Add this filter in new method
-    // if post_details.status == PostStatus::BannedDueToUserReporting {
-    //     return Ok(None);
-    // }
+    // TODO: temporary patch in frontend to not show banned videos, to be removed later after NSFW tagging
+    if PostStatus::from(&post_details.status) == PostStatus::BannedDueToUserReporting {
+        return Ok(None);
+    }
 
     let post_uuid = &post_details.video_uid;
     let req_url = format!(

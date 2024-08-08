@@ -49,7 +49,7 @@ pub fn ScrollingPostView<F: Fn() -> V + Clone + 'static, V, O: Fn() -> IV, IV: I
                                     return;
                                 }
                                 if video_queue.with_untracked(|q| q.len()).saturating_sub(queue_idx)
-                                    <= 10
+                                    <= 15
                                 {
                                     next_videos.as_ref().map(|nv| { nv() });
                                 }
