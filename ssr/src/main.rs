@@ -29,6 +29,8 @@ pub async fn server_fn_handler(
             provide_context(app_state.cookie_key.clone());
             #[cfg(feature = "oauth-ssr")]
             provide_context(app_state.google_oauth.clone());
+
+            #[cfg(not(clippy))]
             #[cfg(feature = "ga4")]
             provide_context(app_state.grpc_offchain_channel.clone());
         },
@@ -54,6 +56,8 @@ pub async fn leptos_routes_handler(
             provide_context(app_state.cookie_key.clone());
             #[cfg(feature = "oauth-ssr")]
             provide_context(app_state.google_oauth.clone());
+
+            #[cfg(not(clippy))]
             #[cfg(feature = "ga4")]
             provide_context(app_state.grpc_offchain_channel.clone());
         },

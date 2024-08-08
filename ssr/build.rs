@@ -126,8 +126,33 @@ mod build_common {
         Ok(())
     }
 
+    fn build_gprc_client() -> Result<()> {
+        let ml_feed_proto = "contracts/projects/ml_feed/ml_feed.proto";
+        let mut out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+
+        tonic_build::configure()
+            .build_client(true)
+            .build_server(false)
+            .out_dir(out_dir.clone())
+            .compile(&[ml_feed_proto], &["proto"])?;
+
+        out_dir = out_dir.join("grpc-web");
+        fs::create_dir_all(&out_dir)?;
+
+        tonic_build_2::configure()
+            .build_client(true)
+            .build_server(false)
+            .out_dir(out_dir)
+            .compile(&[ml_feed_proto], &["proto"])?;
+
+        Ok(())
+    }
+
     pub fn build_common() -> Result<()> {
         build_did_intf()?;
+
+        build_gprc_client()?;
+
         Ok(())
     }
 }

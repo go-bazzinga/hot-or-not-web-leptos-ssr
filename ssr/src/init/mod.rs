@@ -54,6 +54,7 @@ fn init_google_oauth() -> openidconnect::core::CoreClient {
     .set_redirect_uri(RedirectUrl::new(redirect_uri).unwrap())
 }
 
+#[cfg(not(clippy))]
 #[cfg(feature = "ga4")]
 async fn init_grpc_offchain_channel() -> tonic::transport::Channel {
     use crate::consts::OFF_CHAIN_AGENT_GRPC_URL;
@@ -161,6 +162,7 @@ impl AppStateBuilder {
             cookie_key: init_cookie_key(),
             #[cfg(feature = "oauth-ssr")]
             google_oauth: init_google_oauth(),
+            #[cfg(not(clippy))]
             #[cfg(feature = "ga4")]
             grpc_offchain_channel: init_grpc_offchain_channel().await,
         };

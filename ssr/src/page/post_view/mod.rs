@@ -23,7 +23,7 @@ use crate::{
         route::failure_redirect,
     },
 };
-use video_iter::VideoFetchStream;
+use video_iter::{FeedResultType, VideoFetchStream};
 use video_loader::{BgView, VideoView};
 
 use overlay::HomeButtonOverlay;
@@ -73,7 +73,7 @@ pub fn ScrollingView<NV: Fn() -> NVR + Clone + 'static, NVR>(
                 class="snap-mandatory snap-y overflow-y-scroll h-dvh w-dvw bg-black"
                 style:scroll-snap-points-y="repeat(100vh)"
             >
-                <HomeButtonOverlay/>
+                <HomeButtonOverlay />
                 <For
                     each=move || video_queue().into_iter().enumerate()
                     key=|(_, details)| (details.canister_id, details.post_id)
@@ -123,7 +123,7 @@ pub fn ScrollingView<NV: Fn() -> NVR + Clone + 'static, NVR>(
                             <div _ref=container_ref class="snap-always snap-end w-full h-full">
                                 <Show when=show_video>
                                     <BgView video_queue current_idx idx=queue_idx>
-                                        <VideoView video_queue current_idx idx=queue_idx muted/>
+                                        <VideoView video_queue current_idx idx=queue_idx muted />
                                     </BgView>
                                 </Show>
                             </div>
@@ -171,7 +171,7 @@ pub fn PostViewWithUpdates(initial_post: Option<PostDetails>) -> impl IntoView {
                 return;
             }
             f.start = 1;
-            f.limit = 1;
+            f.limit = 15;
         });
         video_queue.update_untracked(|v| {
             if v.len() > 1 {
@@ -198,10 +198,14 @@ pub fn PostViewWithUpdates(initial_post: Option<PostDetails>) -> impl IntoView {
 
             let chunks = if let Some(canisters) = auth_canisters.as_ref() {
                 let fetch_stream = VideoFetchStream::new(canisters, cursor);
-                fetch_stream.fetch_post_uids_chunked(3, nsfw_enabled).await
+                fetch_stream
+                    .fetch_post_uids_hybrid(3, nsfw_enabled, video_queue.get_untracked())
+                    .await
             } else {
                 let fetch_stream = VideoFetchStream::new(&unauth_canisters, cursor);
-                fetch_stream.fetch_post_uids_chunked(3, nsfw_enabled).await
+                fetch_stream
+                    .fetch_post_uids_hybrid(3, nsfw_enabled, video_queue.get_untracked())
+                    .await
             };
 
             let res = try_or_redirect!(chunks);
@@ -216,14 +220,16 @@ pub fn PostViewWithUpdates(initial_post: Option<PostDetails>) -> impl IntoView {
                     }
                 });
             }
+            leptos::logging::log!("feed type: {:?}", res.res_type);
+            if res.res_type == FeedResultType::PostCache {
+                fetch_cursor.try_update(|c| c.advance());
+            }
+
             if res.end || cnt >= 8 {
                 queue_end.try_set(res.end);
                 break;
             }
-            fetch_cursor.try_update(|c| c.advance());
         }
-
-        fetch_cursor.try_update(|c| c.advance());
     });
     create_effect(move |_| {
         if !recovering_state.get_untracked() {
@@ -264,7 +270,7 @@ pub fn PostViewWithUpdates(initial_post: Option<PostDetails>) -> impl IntoView {
             recovering_state
             fetch_next_videos=next_videos
             queue_end
-            overlay=|| view! { <HomeButtonOverlay/> }
+            overlay=|| view! { <HomeButtonOverlay /> }
         />
     }
 }
@@ -321,7 +327,7 @@ pub fn PostView() -> impl IntoView {
                 fetch_first_video_uid()
                     .and_then(|initial_post| {
                         let initial_post = initial_post.ok()?;
-                        Some(view! { <PostViewWithUpdates initial_post/> })
+                        Some(view! { <PostViewWithUpdates initial_post /> })
                     })
             }}
 

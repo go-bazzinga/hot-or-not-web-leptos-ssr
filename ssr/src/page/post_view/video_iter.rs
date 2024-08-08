@@ -23,9 +23,16 @@ pub async fn post_liked_by_me(
 
 type PostsStream<'a> = Pin<Box<dyn Stream<Item = Vec<Result<PostDetails, PostViewError>>> + 'a>>;
 
+#[derive(Debug, Eq, PartialEq)]
+pub enum FeedResultType {
+    PostCache,
+    MLFeed,
+}
+
 pub struct FetchVideosRes<'a> {
     pub posts_stream: PostsStream<'a>,
     pub end: bool,
+    pub res_type: FeedResultType,
 }
 
 pub struct VideoFetchStream<'a, const AUTH: bool> {
@@ -39,7 +46,7 @@ impl<'a, const AUTH: bool> VideoFetchStream<'a, AUTH> {
     }
 
     pub async fn fetch_post_uids_chunked(
-        self,
+        &self,
         chunks: usize,
         allow_nsfw: bool,
     ) -> Result<FetchVideosRes<'a>, PostViewError> {
@@ -62,6 +69,7 @@ impl<'a, const AUTH: bool> VideoFetchStream<'a, AUTH> {
                 return Ok(FetchVideosRes {
                     posts_stream: Box::pin(futures::stream::empty()),
                     end: true,
+                    res_type: FeedResultType::PostCache,
                 })
             }
             post_cache::Result_::Err(_) => {
@@ -82,6 +90,86 @@ impl<'a, const AUTH: bool> VideoFetchStream<'a, AUTH> {
         Ok(FetchVideosRes {
             posts_stream: Box::pin(chunk_stream),
             end,
+            res_type: FeedResultType::PostCache,
         })
+    }
+
+    pub async fn fetch_post_uids_ml_feed_chunked(
+        &self,
+        chunks: usize,
+        _allow_nsfw: bool,
+        video_queue: Vec<PostDetails>,
+    ) -> Result<FetchVideosRes<'a>, PostViewError> {
+        #[cfg(feature = "hydrate")]
+        {
+            use crate::utils::ml_feed::ml_feed_grpcweb::MLFeed;
+            use leptos::expect_context;
+
+            let user_canister_principal = self.canisters.user_canister();
+            let ml_feed: MLFeed = expect_context();
+
+            let top_posts_fut = ml_feed.get_next_feed(
+                &user_canister_principal,
+                self.cursor.limit as u32,
+                video_queue,
+            );
+
+            let top_posts = match top_posts_fut.await {
+                Ok(top_posts) => top_posts,
+                Err(e) => {
+                    leptos::logging::log!("error fetching posts: {:?}", e); // TODO: to be removed
+                    return Err(PostViewError::MLFeedError(
+                        "ML feed server failed to send results".into(),
+                    ));
+                }
+            };
+
+            let end = top_posts.len() < self.cursor.limit as usize;
+            let chunk_stream = top_posts
+                .into_iter()
+                .map(move |item| get_post_uid(self.canisters, item.0, item.1))
+                .collect::<FuturesOrdered<_>>()
+                .filter_map(|res| async { res.transpose() })
+                .chunks(chunks);
+
+            Ok(FetchVideosRes {
+                posts_stream: Box::pin(chunk_stream),
+                end,
+                res_type: FeedResultType::MLFeed,
+            })
+        }
+
+        #[cfg(not(feature = "hydrate"))]
+        {
+            return Ok(FetchVideosRes {
+                posts_stream: Box::pin(futures::stream::empty()),
+                end: true,
+                res_type: FeedResultType::MLFeed,
+            });
+        }
+    }
+
+    pub async fn fetch_post_uids_hybrid(
+        &self,
+        chunks: usize,
+        _allow_nsfw: bool,
+        video_queue: Vec<PostDetails>,
+    ) -> Result<FetchVideosRes<'a>, PostViewError> {
+        // If cursor.start is < 15, fetch from fetch_post_uids_chunked
+        // else fetch from fetch_post_uids_ml_feed_chunked
+        // if that fails fallback to fetch_post_uids_chunked
+
+        if self.cursor.start < 15 {
+            self.fetch_post_uids_chunked(chunks, _allow_nsfw).await
+        } else {
+            let res = self
+                .fetch_post_uids_ml_feed_chunked(chunks, _allow_nsfw, video_queue)
+                .await;
+
+            match res {
+                Ok(res) => Ok(res),
+                Err(_) => self.fetch_post_uids_chunked(chunks, _allow_nsfw).await,
+            }
+        }
     }
 }
