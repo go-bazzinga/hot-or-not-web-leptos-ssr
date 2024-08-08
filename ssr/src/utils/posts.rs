@@ -2,8 +2,7 @@ use candid::Principal;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    canister::individual_user_template::{PostDetailsForFrontend, PostStatus as PostStatusCandid},
-    state::canisters::Canisters,
+    canister::individual_user_template::PostDetailsForFrontend, state::canisters::Canisters,
 };
 
 use super::{profile::propic_from_principal, types::PostStatus};

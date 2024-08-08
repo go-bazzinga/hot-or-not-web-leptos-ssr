@@ -160,15 +160,15 @@ impl<'a, const AUTH: bool> VideoFetchStream<'a, AUTH> {
         // if that fails fallback to fetch_post_uids_chunked
 
         if self.cursor.start < 15 {
-            return self.fetch_post_uids_chunked(chunks, _allow_nsfw).await;
+            self.fetch_post_uids_chunked(chunks, _allow_nsfw).await
         } else {
             let res = self
                 .fetch_post_uids_ml_feed_chunked(chunks, _allow_nsfw, video_queue)
                 .await;
 
             match res {
-                Ok(res) => return Ok(res),
-                Err(_) => return self.fetch_post_uids_chunked(chunks, _allow_nsfw).await,
+                Ok(res) => Ok(res),
+                Err(_) => self.fetch_post_uids_chunked(chunks, _allow_nsfw).await,
             }
         }
     }
