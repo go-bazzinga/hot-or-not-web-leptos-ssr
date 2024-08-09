@@ -1,5 +1,6 @@
 #[cfg(feature = "backend-admin")]
 pub mod admin_canisters;
+pub mod audio_state;
 pub mod auth;
 pub mod canisters;
 pub mod content_seed_client;
