@@ -230,7 +230,7 @@ yral-username-gen = { git = "https://github.com/dolr-ai/yral-common.git", branch
 
 # OpenTelemetry dependencies for telemetry_axum
 opentelemetry = { version = "0.24.0", features = ["trace"] }
-opentelemetry_sdk = { version = "0.24.1", features = ["rt-tokio"] }
+opentelemetry_sdk = { version = "0.31.0", features = ["rt-tokio"] }
 opentelemetry-otlp = { version = "0.17.0", default-features = false, features = [
     "reqwest-rustls",
     "http-proto",
