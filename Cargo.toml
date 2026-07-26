@@ -151,7 +151,7 @@ consts = { path = "./ssr/src/consts" }
 state = { path = "./ssr/src/state" }
 utils = { path = "./ssr/src/utils" }
 page = { path = "./ssr/src/page" }
-rand = { version = "0.9.0", default-features = false, features = ["small_rng"] }
+rand = { version = "0.9.3", default-features = false, features = ["small_rng"] }
 # need getrandom with wasm_js feature for generating random values in wasm32-unknown-unknown
 getrandom = { version = "0.3.3", default-features = false, features = [
     "wasm_js",

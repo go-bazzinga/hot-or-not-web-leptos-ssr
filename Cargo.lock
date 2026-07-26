@@ -1962,7 +1962,7 @@ version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a1e6a265c649f3f5979b601d26f1d05ada116434c87741c9493cb56218f76cbc"
 dependencies = [
- "heck 0.5.0",
+ "heck",
  "proc-macro2",
  "quote",
  "syn 2.0.114",
@@ -3190,12 +3190,6 @@ dependencies = [
 
 [[package]]
 name = "heck"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
-
-[[package]]
-name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
@@ -3237,7 +3231,7 @@ dependencies = [
  "idna",
  "ipnet",
  "once_cell",
- "rand 0.9.2",
+ "rand 0.9.4",
  "ring",
  "thiserror 2.0.16",
  "tinyvec",
@@ -3259,7 +3253,7 @@ dependencies = [
  "moka",
  "once_cell",
  "parking_lot",
- "rand 0.9.2",
+ "rand 0.9.4",
  "resolv-conf",
  "smallvec",
  "thiserror 2.0.16",
@@ -5272,7 +5266,7 @@ dependencies = [
  "oco_ref",
  "or_poisoned",
  "paste",
- "rand 0.9.2",
+ "rand 0.9.4",
  "reactive_graph",
  "rustc-hash",
  "rustc_version",
@@ -6258,7 +6252,7 @@ dependencies = [
  "openidconnect",
  "priority-queue",
  "prost",
- "rand 0.9.2",
+ "rand 0.9.4",
  "rand_chacha 0.3.1",
  "redb",
  "redis",
@@ -6786,8 +6780,8 @@ version = "0.13.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be769465445e8c1474e9c5dac2018218498557af32d9ed057325ec9a41ae81bf"
 dependencies = [
- "heck 0.4.1",
- "itertools 0.10.5",
+ "heck",
+ "itertools 0.14.0",
  "log",
  "multimap",
  "once_cell",
@@ -6807,7 +6801,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a56d757972c98b346a9b766e3f02746cde6dd1cd1d1d563472929fdd74bec4d"
 dependencies = [
  "anyhow",
- "itertools 0.10.5",
+ "itertools 0.14.0",
  "proc-macro2",
  "quote",
  "syn 2.0.114",
@@ -6895,7 +6889,7 @@ dependencies = [
  "bytes",
  "getrandom 0.3.3",
  "lru-slab",
- "rand 0.9.2",
+ "rand 0.9.4",
  "ring",
  "rustc-hash",
  "rustls 0.23.31",
@@ -6977,9 +6971,9 @@ dependencies = [
 
 [[package]]
 name = "rand"
-version = "0.9.2"
+version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6db2770f06117d490610c7488547d543617b21bfa07796d7a12f6f1bd53850d1"
+checksum = "44c5af06bb1b7d3216d91932aed5265164bf384dc89cd6ba05cf59a35f5f76ea"
 dependencies = [
  "rand_chacha 0.9.0",
  "rand_core 0.9.3",
@@ -7120,7 +7114,7 @@ dependencies = [
  "log",
  "percent-encoding",
  "pin-project-lite",
- "rand 0.9.2",
+ "rand 0.9.4",
  "rustls 0.23.31",
  "rustls-native-certs 0.8.1",
  "ryu",
@@ -8474,7 +8468,7 @@ dependencies = [
  "openidconnect",
  "priority-queue",
  "prost",
- "rand 0.9.2",
+ "rand 0.9.4",
  "rand_chacha 0.3.1",
  "redb",
  "redis",
@@ -8586,7 +8580,7 @@ version = "0.26.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4c6bee85a5a24955dc440386795aa378cd9cf82acd5f764469152d2270e581be"
 dependencies = [
- "heck 0.5.0",
+ "heck",
  "proc-macro2",
  "quote",
  "rustversion",
@@ -9406,7 +9400,7 @@ dependencies = [
  "http 1.3.1",
  "httparse",
  "log",
- "rand 0.9.2",
+ "rand 0.9.4",
  "sha1",
  "thiserror 2.0.16",
  "utf-8",
@@ -10573,7 +10567,7 @@ version = "0.1.0"
 source = "git+https://github.com/dolr-ai/yral-common.git?branch=master#2568a4955956b2cd0add6c3c94cc09e41cf7e1a5"
 dependencies = [
  "candid",
- "rand 0.9.2",
+ "rand 0.9.4",
  "rand_xoshiro",
 ]
 
